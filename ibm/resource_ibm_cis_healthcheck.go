@@ -24,6 +24,7 @@ const (
 	cisGLBHealthCheckAllowInsecure   = "allow_insecure"
 	cisGLBHealthCheckCreatedOn       = "create_on"
 	cisGLBHealthCheckModifiedOn      = "modified_on"
+	cisGLBHealthCheckHeader          = "header"
 )
 
 func resourceIBMCISHealthCheck() *schema.Resource {
@@ -51,6 +52,7 @@ func resourceIBMCISHealthCheck() *schema.Resource {
 				Type:         schema.TypeString,
 				Description:  "path",
 				Optional:     true,
+				Default:      "/",
 				ValidateFunc: validateURLPath,
 			},
 			cisGLBHealthCheckExpectedBody: {
@@ -66,6 +68,7 @@ func resourceIBMCISHealthCheck() *schema.Resource {
 			cisGLBHealthCheckDesc: {
 				Type:        schema.TypeString,
 				Description: "description",
+				Default:     " ",
 				Optional:    true,
 			},
 			cisGLBHealthCheckType: {
@@ -106,6 +109,7 @@ func resourceIBMCISHealthCheck() *schema.Resource {
 			cisGLBHealthCheckFollowRedirects: {
 				Type:        schema.TypeBool,
 				Description: "follow_redirects",
+				Default:     false,
 				Optional:    true,
 			},
 			cisGLBHealthCheckAllowInsecure: {
