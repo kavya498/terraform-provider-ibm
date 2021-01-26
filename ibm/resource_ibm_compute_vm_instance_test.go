@@ -3,7 +3,6 @@ package ibm
 import (
 	"errors"
 	"fmt"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -16,15 +15,7 @@ import (
 	"github.com/softlayer/softlayer-go/services"
 )
 
-func init() {
-	imageID := os.Getenv("IBM_COMPUTE_VM_INSTANCE_IMAGE_ID")
-	if imageID == "" {
-		fmt.Println("[WARN] Set the environment variable IBM_COMPUTE_VM_INSTANCE_IMAGE_ID for testing " +
-			"the ibm_compute_vm_instance resource. The image should be replicated in the Washington 4 datacenter. Some tests for that resource will fail if this is not set correctly")
-	}
-}
-
-func TestAccIBMComputeVmInstance_basic(t *testing.T) {
+func TestAccIBMComputeVMInstance_basic(t *testing.T) {
 	var guest datatypes.Virtual_Guest
 
 	hostname := acctest.RandString(16)
@@ -44,13 +35,13 @@ func TestAccIBMComputeVmInstance_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:  testAccIBMComputeVmInstanceConfigBasic(hostname, domain, networkSpeed1, cores1, memory1, userMetadata1, tags1),
+				Config:  testAccIBMComputeVMInstanceConfigBasic(hostname, domain, networkSpeed1, cores1, memory1, userMetadata1, tags1),
 				Destroy: false,
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "hostname", hostname),
 					resource.TestCheckResourceAttr(
@@ -101,10 +92,10 @@ func TestAccIBMComputeVmInstance_basic(t *testing.T) {
 			},
 
 			{
-				Config:  testAccIBMComputeVmInstanceConfigBasic(hostname, domain, networkSpeed1, cores1, memory1, userMetadata1, tags2),
+				Config:  testAccIBMComputeVMInstanceConfigBasic(hostname, domain, networkSpeed1, cores1, memory1, userMetadata1, tags2),
 				Destroy: false,
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "user_metadata", userMetadata1Unquoted),
 					CheckStringSet(
@@ -115,9 +106,9 @@ func TestAccIBMComputeVmInstance_basic(t *testing.T) {
 			},
 
 			{
-				Config: testAccIBMComputeVmInstanceConfigBasic(hostname, domain, networkSpeed2, cores2, memory2, userMetadata1, tags2),
+				Config: testAccIBMComputeVMInstanceConfigBasic(hostname, domain, networkSpeed2, cores2, memory2, userMetadata1, tags2),
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "cores", cores2),
 					resource.TestCheckResourceAttr(
@@ -128,10 +119,10 @@ func TestAccIBMComputeVmInstance_basic(t *testing.T) {
 			},
 
 			{
-				Config:  testAccIBMComputeVmInstanceConfigUpdate(hostname, domain, networkSpeed2, cores2, memory2, userMetadata1, tags2),
+				Config:  testAccIBMComputeVMInstanceConfigUpdate(hostname, domain, networkSpeed2, cores2, memory2, userMetadata1, tags2),
 				Destroy: false,
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "disks.0", "25"),
 					resource.TestCheckResourceAttr(
@@ -146,7 +137,7 @@ func TestAccIBMComputeVmInstance_basic(t *testing.T) {
 	})
 }
 
-func TestAccIBMComputeVmInstance_bulkvms(t *testing.T) {
+func TestAccIBMComputeVMInstance_bulkvms(t *testing.T) {
 	var guest datatypes.Virtual_Guest
 
 	hostname1 := acctest.RandString(16)
@@ -163,13 +154,13 @@ func TestAccIBMComputeVmInstance_bulkvms(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:  testAccIBMComputeVmInstanceConfigBulkVMs(hostname1, hostname2, domain, networkSpeed1, cores1, memory1, userMetadata1, tags1),
+				Config:  testAccIBMComputeVMInstanceConfigBulkVMs(hostname1, hostname2, domain, networkSpeed1, cores1, memory1, userMetadata1, tags1),
 				Destroy: false,
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "datacenter", "wdc04"),
 					resource.TestCheckResourceAttr(
@@ -220,7 +211,7 @@ func TestAccIBMComputeVmInstance_bulkvms(t *testing.T) {
 	})
 }
 
-func TestAccIBMComputeVmInstanceWithFlavor(t *testing.T) {
+func TestAccIBMComputeVMInstanceWithFlavor(t *testing.T) {
 	var guest datatypes.Virtual_Guest
 
 	hostname := acctest.RandString(16)
@@ -232,7 +223,7 @@ func TestAccIBMComputeVmInstanceWithFlavor(t *testing.T) {
 	flavor := "B1_1X2X25"
 	userMetadata1 := "{\\\"value\\\":\\\"newvalue\\\"}"
 	userMetadata1Unquoted, _ := strconv.Unquote(`"` + userMetadata1 + `"`)
-	updated_flavor := "B1_4X8X25"
+	updatedFlavor := "B1_4X8X25"
 	networkSpeed2 := "100"
 	cores2 := "4"
 	memory2 := "8192"
@@ -241,12 +232,12 @@ func TestAccIBMComputeVmInstanceWithFlavor(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccIBMComputeVmInstanceConfigFlavor(hostname, domain, networkSpeed1, flavor, userMetadata1, tags1),
+				Config: testAccIBMComputeVMInstanceConfigFlavor(hostname, domain, networkSpeed1, flavor, userMetadata1, tags1),
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "hostname", hostname),
 					resource.TestCheckResourceAttr(
@@ -296,9 +287,9 @@ func TestAccIBMComputeVmInstanceWithFlavor(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccIBMComputeVMInstanceConfigFlavorUpdate(hostname, domain, networkSpeed2, updated_flavor, userMetadata1, tags1),
+				Config: testAccIBMComputeVMInstanceConfigFlavorUpdate(hostname, domain, networkSpeed2, updatedFlavor, userMetadata1, tags1),
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "disks.0", "10"),
 					resource.TestCheckResourceAttr(
@@ -306,7 +297,7 @@ func TestAccIBMComputeVmInstanceWithFlavor(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						configInstance, "disks.2", "20"),
 					resource.TestCheckResourceAttr(
-						configInstance, "flavor_key_name", updated_flavor),
+						configInstance, "flavor_key_name", updatedFlavor),
 					resource.TestCheckResourceAttr(
 						configInstance, "cores", cores2),
 					resource.TestCheckResourceAttr(
@@ -319,7 +310,7 @@ func TestAccIBMComputeVmInstanceWithFlavor(t *testing.T) {
 	})
 }
 
-func TestAccIBMComputeVmInstance_With_SSH_Keys(t *testing.T) {
+func TestAccIBMComputeVMInstance_With_SSH_Keys(t *testing.T) {
 	var guest datatypes.Virtual_Guest
 
 	hostname := acctest.RandString(16)
@@ -334,13 +325,13 @@ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCKVmnMOlHKcZK8tpt3MP1lqOLAcqcJzhsvJcjscgVE
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:  testComputeInstanceWithSSHKey(label, notes, publicKey, hostname, domain),
 				Destroy: false,
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "hostname", hostname),
 					resource.TestCheckResourceAttr(
@@ -353,7 +344,7 @@ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCKVmnMOlHKcZK8tpt3MP1lqOLAcqcJzhsvJcjscgVE
 	})
 }
 
-func TestAccIBMComputeVmInstance_basic_import(t *testing.T) {
+func TestAccIBMComputeVMInstance_basic_import(t *testing.T) {
 	hostname := acctest.RandString(16)
 	domain := "tfsshkeyvmuat.ibm.com"
 	label := fmt.Sprintf("terraformsshuat_create_step_label_%d", acctest.RandIntRange(10, 100))
@@ -366,12 +357,12 @@ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCKVmnMOlHKcZK8tpt3MP1lqOLAcqcJzhsvJcjscgVE
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testComputeInstanceWithSSHKey(label, notes, publicKey, hostname, domain),
 			},
-			resource.TestStep{
+			{
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
@@ -384,7 +375,7 @@ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCKVmnMOlHKcZK8tpt3MP1lqOLAcqcJzhsvJcjscgVE
 	})
 }
 
-func TestAccIBMComputeVmInstance_basic_import_WithFlavor(t *testing.T) {
+func TestAccIBMComputeVMInstance_basic_import_WithFlavor(t *testing.T) {
 	hostname := acctest.RandString(16)
 	domain := "terraformuat.ibm.com"
 	tags1 := "collectd"
@@ -396,12 +387,12 @@ func TestAccIBMComputeVmInstance_basic_import_WithFlavor(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
-				Config: testAccIBMComputeVmInstanceConfigFlavor(hostname, domain, networkSpeed1, flavor, userMetadata1, tags1),
+			{
+				Config: testAccIBMComputeVMInstanceConfigFlavor(hostname, domain, networkSpeed1, flavor, userMetadata1, tags1),
 			},
-			resource.TestStep{
+			{
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
@@ -414,7 +405,7 @@ func TestAccIBMComputeVmInstance_basic_import_WithFlavor(t *testing.T) {
 	})
 }
 
-func TestAccIBMComputeVmInstance_InvalidNotes(t *testing.T) {
+func TestAccIBMComputeVMInstance_InvalidNotes(t *testing.T) {
 	hostname := acctest.RandString(16)
 	domain := "terraformvmuat.ibm.com"
 	networkSpeed1 := "10"
@@ -426,55 +417,56 @@ func TestAccIBMComputeVmInstance_InvalidNotes(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-			resource.TestStep{
-				Config:      testAccCheckIBMComputeVmInstance_InvalidNotes(hostname, domain, networkSpeed1, cores1, memory1, userMetadata1, tags1),
+			{
+				Config:      testAccCheckIBMComputeVMInstanceInvalidNotes(hostname, domain, networkSpeed1, cores1, memory1, userMetadata1, tags1),
 				ExpectError: regexp.MustCompile("should not exceed 1000 characters"),
 			},
 		},
 	})
 }
 
-func TestAccIBMComputeVmInstance_BlockDeviceTemplateGroup(t *testing.T) {
+func TestAccIBMComputeVMInstance_BlockDeviceTemplateGroup(t *testing.T) {
 	var guest datatypes.Virtual_Guest
 
 	hostname := acctest.RandString(16)
 	domain := "bdtg.terraformvmuat.ibm.com"
 
-	imageID := os.Getenv("IBM_COMPUTE_VM_INSTANCE_IMAGE_ID")
+	// Image Id of RightImage_Ubuntu_10.04_x64_v5.7.24
+	imageID := 16277
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccIBMComputeVmInstanceConfigBlockDeviceTemplateGroup(hostname, domain, imageID),
+				Config: testAccIBMComputeVMInstanceConfigBlockDeviceTemplateGroup(hostname, domain, imageID),
 				Check: resource.ComposeTestCheckFunc(
 					// image_id value is hardcoded. If it's valid then virtual guest will be created well
-					testAccIBMComputeVmInstanceExists("ibm_compute_vm_instance.terraform-acceptance-test-BDTGroup", &guest),
+					testAccIBMComputeVMInstanceExists("ibm_compute_vm_instance.terraform-acceptance-test-BDTGroup", &guest),
 				),
 			},
 		},
 	})
 }
 
-func TestAccIBMComputeVmInstance_CustomImageMultipleDisks(t *testing.T) {
+func TestAccIBMComputeVMInstance_CustomImageMultipleDisks(t *testing.T) {
 	var guest datatypes.Virtual_Guest
 	hostname := acctest.RandString(16)
 	domain := "mdisk.terraformvmuat.ibm.com"
-
-	imageID := os.Getenv("IBM_COMPUTE_VM_INSTANCE_IMAGE_ID")
+	// Image Id of RightImage_Ubuntu_10.04_x64_v5.7.24
+	imageID := 16277
 
 	configInstance := "ibm_compute_vm_instance.terraform-acceptance-test-disks"
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccIBMComputeVmInstanceConfigCustomImageMultipleDisks(hostname, domain, imageID),
+				Config: testAccIBMComputeVMInstanceConfigCustomImageMultipleDisks(hostname, domain, imageID),
 				Check: resource.ComposeTestCheckFunc(
 					// image_id value is hardcoded. If it's valid then virtual guest will be created well
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "disks.0", "25"),
 					resource.TestCheckResourceAttr(
@@ -489,7 +481,7 @@ func TestAccIBMComputeVmInstance_CustomImageMultipleDisks(t *testing.T) {
 	})
 }
 
-func TestAccIBMComputeVmInstance_PostInstallScriptUri(t *testing.T) {
+func TestAccIBMComputeVMInstance_PostInstallScriptUri(t *testing.T) {
 	var guest datatypes.Virtual_Guest
 
 	hostname := acctest.RandString(16)
@@ -498,20 +490,20 @@ func TestAccIBMComputeVmInstance_PostInstallScriptUri(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccIBMComputeVmInstanceConfigPostInstallScriptURI(hostname, domain),
+				Config: testAccIBMComputeVMInstanceConfigPostInstallScriptURI(hostname, domain),
 				Check: resource.ComposeTestCheckFunc(
 					// image_id value is hardcoded. If it's valid then virtual guest will be created well
-					testAccIBMComputeVmInstanceExists("ibm_compute_vm_instance.terraform-acceptance-test-pISU", &guest),
+					testAccIBMComputeVMInstanceExists("ibm_compute_vm_instance.terraform-acceptance-test-pISU", &guest),
 				),
 			},
 		},
 	})
 }
 
-func TestAccIBMComputeVmInstance_WINDOWS_PostInstallScriptUri(t *testing.T) {
+func TestAccIBMComputeVMInstance_WINDOWS_PostInstallScriptUri(t *testing.T) {
 	var guest datatypes.Virtual_Guest
 
 	hostname := acctest.RandString(14)
@@ -520,20 +512,20 @@ func TestAccIBMComputeVmInstance_WINDOWS_PostInstallScriptUri(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccIBMComputeVmInstanceConfigWindowsPostInstallScriptURI(hostname, domain),
+				Config: testAccIBMComputeVMInstanceConfigWindowsPostInstallScriptURI(hostname, domain),
 				Check: resource.ComposeTestCheckFunc(
 					// image_id value is hardcoded. If it's valid then virtual guest will be created well
-					testAccIBMComputeVmInstanceExists("ibm_compute_vm_instance.terraform-acceptance-test-pISU", &guest),
+					testAccIBMComputeVMInstanceExists("ibm_compute_vm_instance.terraform-acceptance-test-pISU", &guest),
 				),
 			},
 		},
 	})
 }
 
-func TestAccIBMComputeVmInstance_With_Network_Storage_Access(t *testing.T) {
+func TestAccIBMComputeVMInstance_With_Network_Storage_Access(t *testing.T) {
 	var guest datatypes.Virtual_Guest
 	hostname := acctest.RandString(16)
 	domain := "storage.tfmvmuat.ibm.com"
@@ -542,12 +534,12 @@ func TestAccIBMComputeVmInstance_With_Network_Storage_Access(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccessToStoragesBasic(hostname, domain),
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists("ibm_compute_vm_instance.terraform-vsi-storage-access", &guest),
+					testAccIBMComputeVMInstanceExists("ibm_compute_vm_instance.terraform-vsi-storage-access", &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "hostname", hostname),
 					resource.TestCheckResourceAttr(
@@ -565,7 +557,7 @@ func TestAccIBMComputeVmInstance_With_Network_Storage_Access(t *testing.T) {
 			{
 				Config: testAccessToStoragesUpdate(hostname, domain),
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists("ibm_compute_vm_instance.terraform-vsi-storage-access", &guest),
+					testAccIBMComputeVMInstanceExists("ibm_compute_vm_instance.terraform-vsi-storage-access", &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "file_storage_ids.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -576,7 +568,7 @@ func TestAccIBMComputeVmInstance_With_Network_Storage_Access(t *testing.T) {
 	})
 }
 
-func TestAccIBMComputeVmInstance_With_Public_Bandwidth_Limited(t *testing.T) {
+func TestAccIBMComputeVMInstance_With_Public_Bandwidth_Limited(t *testing.T) {
 	var guest datatypes.Virtual_Guest
 
 	hostname := acctest.RandString(16)
@@ -586,13 +578,13 @@ func TestAccIBMComputeVmInstance_With_Public_Bandwidth_Limited(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:  testComputeInstanceWithPublicBandWidth(hostname, domain),
 				Destroy: false,
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "hostname", hostname),
 					resource.TestCheckResourceAttr(
@@ -605,7 +597,7 @@ func TestAccIBMComputeVmInstance_With_Public_Bandwidth_Limited(t *testing.T) {
 				Config:  testComputeInstanceWithPublicBandWidthDefault(hostname, domain),
 				Destroy: false,
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "hostname", hostname),
 					resource.TestCheckResourceAttr(
@@ -615,7 +607,7 @@ func TestAccIBMComputeVmInstance_With_Public_Bandwidth_Limited(t *testing.T) {
 		},
 	})
 }
-func TestAccIBMComputeVmInstance_With_Public_Bandwidth_Unlimited(t *testing.T) {
+func TestAccIBMComputeVMInstance_With_Public_Bandwidth_Unlimited(t *testing.T) {
 	var guest datatypes.Virtual_Guest
 
 	hostname := acctest.RandString(16)
@@ -625,13 +617,13 @@ func TestAccIBMComputeVmInstance_With_Public_Bandwidth_Unlimited(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:  testComputeInstanceWithPublicBandwidthUnlimited(hostname, domain),
 				Destroy: false,
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "hostname", hostname),
 					resource.TestCheckResourceAttr(
@@ -642,7 +634,7 @@ func TestAccIBMComputeVmInstance_With_Public_Bandwidth_Unlimited(t *testing.T) {
 	})
 }
 
-func TestAccIBMComputeVmInstance_With_DedicatedHost_Name(t *testing.T) {
+func TestAccIBMComputeVMInstance_With_DedicatedHost_Name(t *testing.T) {
 	var guest datatypes.Virtual_Guest
 
 	hostname := acctest.RandString(16)
@@ -652,13 +644,13 @@ func TestAccIBMComputeVmInstance_With_DedicatedHost_Name(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:  testComputeInstanceWithDedicatdHostName(hostname, domain),
 				Destroy: false,
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "hostname", hostname),
 					resource.TestCheckResourceAttr(
@@ -669,7 +661,7 @@ func TestAccIBMComputeVmInstance_With_DedicatedHost_Name(t *testing.T) {
 	})
 }
 
-func TestAccIBMComputeVmInstance_With_DedicatedHost_ID(t *testing.T) {
+func TestAccIBMComputeVMInstance_With_DedicatedHost_ID(t *testing.T) {
 	var guest datatypes.Virtual_Guest
 
 	hostname := acctest.RandString(16)
@@ -679,13 +671,13 @@ func TestAccIBMComputeVmInstance_With_DedicatedHost_ID(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:  testComputeInstanceWithDedicatdHostID(hostname, domain),
 				Destroy: false,
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "hostname", hostname),
 					resource.TestCheckResourceAttr(
@@ -696,7 +688,7 @@ func TestAccIBMComputeVmInstance_With_DedicatedHost_ID(t *testing.T) {
 	})
 }
 
-func TestAccIBMComputeVmInstance_With_Security_Groups(t *testing.T) {
+func TestAccIBMComputeVMInstance_With_Security_Groups(t *testing.T) {
 	var guest datatypes.Virtual_Guest
 	var pubsg datatypes.Network_SecurityGroup
 	var pvtsg datatypes.Network_SecurityGroup
@@ -711,7 +703,7 @@ func TestAccIBMComputeVmInstance_With_Security_Groups(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:  testAccIBMComputeVMInstanceConfigWithSecurityGroups(sgName1, sgDesc1, sgName2, sgDesc2, hostname),
@@ -719,7 +711,7 @@ func TestAccIBMComputeVmInstance_With_Security_Groups(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckIBMSecurityGroupExists("ibm_security_group.pubsg", &pubsg),
 					testAccCheckIBMSecurityGroupExists("ibm_security_group.pvtsg", &pvtsg),
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "hostname", hostname),
 					resource.TestCheckResourceAttr(
@@ -732,7 +724,7 @@ func TestAccIBMComputeVmInstance_With_Security_Groups(t *testing.T) {
 	})
 }
 
-func TestAccIBMComputeVmInstance_With_Evault(t *testing.T) {
+func TestAccIBMComputeVMInstance_With_Evault(t *testing.T) {
 	var guest datatypes.Virtual_Guest
 
 	hostname := acctest.RandString(16)
@@ -742,13 +734,13 @@ func TestAccIBMComputeVmInstance_With_Evault(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config:  testComputeInstanceWithEvault(hostname, domain),
 				Destroy: false,
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "hostname", hostname),
 					resource.TestCheckResourceAttr(
@@ -761,7 +753,7 @@ func TestAccIBMComputeVmInstance_With_Evault(t *testing.T) {
 	})
 }
 
-func TestAccIBMComputeVmInstance_With_Retry(t *testing.T) {
+func TestAccIBMComputeVMInstance_With_Retry(t *testing.T) {
 	var guest datatypes.Virtual_Guest
 
 	hostname := acctest.RandString(16)
@@ -776,7 +768,7 @@ func TestAccIBMComputeVmInstance_With_Retry(t *testing.T) {
 				Config:  testComputeInstanceWithRetry(hostname, domain),
 				Destroy: false,
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "hostname", hostname),
 					resource.TestCheckResourceAttr(
@@ -789,9 +781,9 @@ func TestAccIBMComputeVmInstance_With_Retry(t *testing.T) {
 	})
 }
 
-func TestAccIBMComputeVmInstance_With_Placement_group(t *testing.T) {
+func TestAccIBMComputeVMInstance_With_Placement_group(t *testing.T) {
 	var guest datatypes.Virtual_Guest
-
+	placementGroup := "tf-placement-group" + acctest.RandString(16)
 	hostname := acctest.RandString(16)
 	domain := "tfvmpguat.ibm.com"
 
@@ -799,13 +791,13 @@ func TestAccIBMComputeVmInstance_With_Placement_group(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:  testComputeInstanceWithPlacementGroup(hostname, domain),
+				Config:  testComputeInstanceWithPlacementGroup(hostname, domain, placementGroup),
 				Destroy: false,
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "hostname", hostname),
 					resource.TestCheckResourceAttr(
@@ -818,7 +810,7 @@ func TestAccIBMComputeVmInstance_With_Placement_group(t *testing.T) {
 	})
 }
 
-func TestAccIBMComputeVmInstance_With_Invalid_Retry(t *testing.T) {
+func TestAccIBMComputeVMInstance_With_Invalid_Retry(t *testing.T) {
 
 	hostname := acctest.RandString(16)
 	domain := "tfvmretry.ibm.com"
@@ -836,7 +828,7 @@ func TestAccIBMComputeVmInstance_With_Invalid_Retry(t *testing.T) {
 	})
 }
 
-func TestAccIBMComputeVmInstance_Transient(t *testing.T) {
+func TestAccIBMComputeVMInstance_Transient(t *testing.T) {
 	var guest datatypes.Virtual_Guest
 	hostname := acctest.RandString(16)
 	domain := "terraformuat.ibm.com"
@@ -852,12 +844,12 @@ func TestAccIBMComputeVmInstance_Transient(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccIBMComputeVmInstanceDestroy,
+		CheckDestroy: testAccIBMComputeVMInstanceDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccIBMComputeVMInstanceTransient(hostname, domain, networkSpeed1, flavor, userMetadata1, tags1),
 				Check: resource.ComposeTestCheckFunc(
-					testAccIBMComputeVmInstanceExists(configInstance, &guest),
+					testAccIBMComputeVMInstanceExists(configInstance, &guest),
 					resource.TestCheckResourceAttr(
 						configInstance, "hostname", hostname),
 					resource.TestCheckResourceAttr(
@@ -894,7 +886,7 @@ func TestAccIBMComputeVmInstance_Transient(t *testing.T) {
 					),
 				),
 			},
-			resource.TestStep{
+			{
 				ResourceName:      configInstance,
 				ImportState:       true,
 				ImportStateVerify: true,
@@ -907,7 +899,7 @@ func TestAccIBMComputeVmInstance_Transient(t *testing.T) {
 	})
 }
 
-func testAccIBMComputeVmInstanceDestroy(s *terraform.State) error {
+func testAccIBMComputeVMInstanceDestroy(s *terraform.State) error {
 	service := services.GetVirtualGuestService(testAccProvider.Meta().(ClientSession).SoftLayerSession())
 
 	for _, rs := range s.RootModule().Resources {
@@ -937,7 +929,7 @@ func testAccIBMComputeVmInstanceDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccIBMComputeVmInstanceExists(n string, guest *datatypes.Virtual_Guest) resource.TestCheckFunc {
+func testAccIBMComputeVMInstanceExists(n string, guest *datatypes.Virtual_Guest) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -1016,12 +1008,12 @@ func CheckStringSet(n string, name string, set []string) resource.TestCheckFunc 
 	}
 }
 
-func testAccIBMComputeVmInstanceConfigBasic(hostname, domain, networkSpeed, cores, memory, userMetadata, tags string) string {
+func testAccIBMComputeVMInstanceConfigBasic(hostname, domain, networkSpeed, cores, memory, userMetadata, tags string) string {
 	return fmt.Sprintf(`
 resource "ibm_compute_vm_instance" "terraform-acceptance-test-1" {
     hostname = "%s"
     domain = "%s"
-    os_reference_code = "DEBIAN_8_64"
+    os_reference_code = "DEBIAN_9_64"
     datacenter = "wdc04"
     network_speed = %s
     hourly_billing = true
@@ -1039,20 +1031,21 @@ resource "ibm_compute_vm_instance" "terraform-acceptance-test-1" {
 }`, hostname, domain, networkSpeed, cores, memory, userMetadata, tags)
 }
 
-func testAccIBMComputeVmInstanceConfigBulkVMs(hostname1, hostname2, domain, networkSpeed, cores, memory, userMetadata, tags string) string {
+func testAccIBMComputeVMInstanceConfigBulkVMs(hostname1, hostname2, domain, networkSpeed, cores, memory, userMetadata, tags string) string {
 	return fmt.Sprintf(`
 resource "ibm_compute_vm_instance" "terraform-acceptance-test-1" {
-	 bulk_vms = [{
+	 bulk_vms  {
 	    hostname = "%s"
 	
 	    domain = "%s"
-	  }, {
+	  }
+	  bulk_vms {
 	    hostname = "%s"
 	
 	    domain = "%s"
-	  }]
+	  }
 
-    os_reference_code = "DEBIAN_8_64"
+    os_reference_code = "DEBIAN_9_64"
     datacenter = "wdc04"
     network_speed = %s
     hourly_billing = true
@@ -1070,12 +1063,12 @@ resource "ibm_compute_vm_instance" "terraform-acceptance-test-1" {
 }`, hostname1, domain, hostname2, domain, networkSpeed, cores, memory, userMetadata, tags)
 }
 
-func testAccIBMComputeVmInstanceConfigUpdate(hostname, domain, networkSpeed, cores, memory, userMetadata, tags string) string {
+func testAccIBMComputeVMInstanceConfigUpdate(hostname, domain, networkSpeed, cores, memory, userMetadata, tags string) string {
 	return fmt.Sprintf(`
 resource "ibm_compute_vm_instance" "terraform-acceptance-test-1" {
     hostname = "%s"
     domain = "%s"
-    os_reference_code = "DEBIAN_8_64"
+    os_reference_code = "DEBIAN_9_64"
     datacenter = "wdc04"
     network_speed = %s
     hourly_billing = true
@@ -1093,12 +1086,12 @@ resource "ibm_compute_vm_instance" "terraform-acceptance-test-1" {
 }`, hostname, domain, networkSpeed, cores, memory, userMetadata, tags)
 }
 
-func testAccCheckIBMComputeVmInstance_InvalidNotes(hostname, domain, networkSpeed, cores, memory, userMetadata, tags string) string {
+func testAccCheckIBMComputeVMInstanceInvalidNotes(hostname, domain, networkSpeed, cores, memory, userMetadata, tags string) string {
 	return fmt.Sprintf(`
 resource "ibm_compute_vm_instance" "terraform-acceptance-test-1" {
     hostname = "%s"
     domain = "%s"
-    os_reference_code = "DEBIAN_8_64"
+    os_reference_code = "DEBIAN_9_64"
     datacenter = "wdc04"
     network_speed = %s
     hourly_billing = true
@@ -1116,12 +1109,12 @@ resource "ibm_compute_vm_instance" "terraform-acceptance-test-1" {
 }`, hostname, domain, networkSpeed, cores, memory, userMetadata, tags)
 }
 
-func testAccIBMComputeVmInstanceConfigPostInstallScriptURI(hostname, domain string) string {
+func testAccIBMComputeVMInstanceConfigPostInstallScriptURI(hostname, domain string) string {
 	return fmt.Sprintf(`
 resource "ibm_compute_vm_instance" "terraform-acceptance-test-pISU" {
     hostname = "%s"
     domain = "%s"
-    os_reference_code = "DEBIAN_8_64"
+    os_reference_code = "DEBIAN_9_64"
     datacenter = "wdc04"
     network_speed = 10
     hourly_billing = true
@@ -1136,7 +1129,7 @@ resource "ibm_compute_vm_instance" "terraform-acceptance-test-pISU" {
 }`, hostname, domain)
 }
 
-func testAccIBMComputeVmInstanceConfigWindowsPostInstallScriptURI(hostname, domain string) string {
+func testAccIBMComputeVMInstanceConfigWindowsPostInstallScriptURI(hostname, domain string) string {
 	return fmt.Sprintf(`
 resource "ibm_compute_vm_instance" "terraform-acceptance-test-pISU" {
     hostname = "%s"
@@ -1147,7 +1140,7 @@ resource "ibm_compute_vm_instance" "terraform-acceptance-test-pISU" {
     hourly_billing = true
 	private_network_only = false
     cores = 1
-    memory = 1024
+    memory = 2048
     disks = [100]
     user_metadata = "{\"value\":\"newvalue\"}"
     dedicated_acct_host_only = true
@@ -1156,7 +1149,7 @@ resource "ibm_compute_vm_instance" "terraform-acceptance-test-pISU" {
 }`, hostname, domain)
 }
 
-func testAccIBMComputeVmInstanceConfigBlockDeviceTemplateGroup(hostname, domain, imageID string) string {
+func testAccIBMComputeVMInstanceConfigBlockDeviceTemplateGroup(hostname, domain string, imageID int) string {
 	return fmt.Sprintf(`
 resource "ibm_compute_vm_instance" "terraform-acceptance-test-BDTGroup" {
     hostname = "%s"
@@ -1167,11 +1160,11 @@ resource "ibm_compute_vm_instance" "terraform-acceptance-test-BDTGroup" {
     cores = 1
     memory = 1024
     local_disk = false
-    image_id = %s
+    image_id = "%d"
 }`, hostname, domain, imageID)
 }
 
-func testAccIBMComputeVmInstanceConfigCustomImageMultipleDisks(hostname, domain, imageID string) string {
+func testAccIBMComputeVMInstanceConfigCustomImageMultipleDisks(hostname, domain string, imageID int) string {
 	return fmt.Sprintf(`
 resource "ibm_compute_vm_instance" "terraform-acceptance-test-disks" {
     hostname = "%s"
@@ -1182,7 +1175,7 @@ resource "ibm_compute_vm_instance" "terraform-acceptance-test-disks" {
     cores = 1
     memory = 1024
     local_disk = false
-    image_id = %s
+    image_id = "%d"
     disks = [25, 10]
 }`, hostname, domain, imageID)
 }
@@ -1231,7 +1224,7 @@ resource "ibm_compute_vm_instance" "terraform-vsi-storage-access" {
     cores = 1
     memory = 1024
     local_disk = false
-    os_reference_code = "DEBIAN_8_64"
+    os_reference_code = "DEBIAN_9_64"
     disks = [25, 10]
 }
 %s
@@ -1254,7 +1247,7 @@ resource "ibm_compute_vm_instance" "terraform-vsi-storage-access" {
     cores = 1
     memory = 1024
     local_disk = false
-    os_reference_code = "DEBIAN_8_64"
+    os_reference_code = "DEBIAN_9_64"
     disks = [25, 10]
 }
 
@@ -1276,7 +1269,7 @@ resource "ibm_compute_vm_instance" "terraform-ssh-key" {
     cores = 1
     memory = 1024
     local_disk = false
-    os_reference_code = "DEBIAN_8_64"
+    os_reference_code = "DEBIAN_9_64"
     disks = [25]
 }
 `, hostname, domain)
@@ -1294,7 +1287,7 @@ resource "ibm_compute_vm_instance" "terraform-public-bandwidth" {
 	cores = 1
 	memory = 1024
 	local_disk = false
-	os_reference_code = "DEBIAN_8_64"
+	os_reference_code = "DEBIAN_9_64"
 	disks = [25]
 }
 `, hostname, domain)
@@ -1311,7 +1304,7 @@ resource "ibm_compute_vm_instance" "terraform-public-bandwidth" {
 	cores = 1
 	memory = 1024
 	local_disk = false
-	os_reference_code = "DEBIAN_8_64"
+	os_reference_code = "DEBIAN_9_64"
 	disks = [25]
 	public_bandwidth_limited = 1000
 }
@@ -1329,7 +1322,7 @@ resource "ibm_compute_vm_instance" "terraform-public-bandwidth" {
 	cores = 1
 	memory = 1024
 	local_disk = false
-	os_reference_code = "DEBIAN_8_64"
+	os_reference_code = "DEBIAN_9_64"
 	disks = [25]
 	public_bandwidth_unlimited = true
 }
@@ -1346,7 +1339,7 @@ resource "ibm_compute_vm_instance" "terraform-vm-dedicatedhost" {
 	network_speed = 100
 	cores = 1
 	memory = 1024
-	os_reference_code = "DEBIAN_8_64"
+	os_reference_code = "DEBIAN_9_64"
 	disks                = [25, 25, 100]
 	dedicated_host_name  = "%s"
 }
@@ -1363,7 +1356,7 @@ resource "ibm_compute_vm_instance" "terraform-vm-dedicatedhost" {
 	network_speed = 100
 	cores = 1
 	memory = 1024
-	os_reference_code = "DEBIAN_8_64"
+	os_reference_code = "DEBIAN_9_64"
 	disks                = [25, 100, 25]
 	dedicated_host_id  = "%s"
 }
@@ -1397,7 +1390,7 @@ func testAccIBMComputeVMInstanceConfigWithSecurityGroups(sgName1, sgDesc1, sgNam
 		  resource "ibm_compute_vm_instance" "tfuatvmwithgroups" {
 			hostname                   = "%s"
 			domain                     = "tfvmuatsg.com"
-			os_reference_code          = "DEBIAN_8_64"
+			os_reference_code          = "DEBIAN_9_64"
 			datacenter                 = "wdc07"
 			network_speed              = 10
 			hourly_billing             = true
@@ -1416,12 +1409,12 @@ func testAccIBMComputeVMInstanceConfigWithSecurityGroups(sgName1, sgDesc1, sgNam
 	return v
 }
 
-func testAccIBMComputeVmInstanceConfigFlavor(hostname, domain, networkSpeed, flavor, userMetadata, tags string) string {
+func testAccIBMComputeVMInstanceConfigFlavor(hostname, domain, networkSpeed, flavor, userMetadata, tags string) string {
 	return fmt.Sprintf(`
 	resource "ibm_compute_vm_instance" "terraform-acceptance-test-1" {
 	    hostname = "%s"
 	    domain = "%s"
-	    os_reference_code = "DEBIAN_8_64"
+	    os_reference_code = "DEBIAN_9_64"
 	    datacenter = "wdc04"
 	    network_speed = %s
 	    hourly_billing = true
@@ -1442,7 +1435,7 @@ func testAccIBMComputeVMInstanceConfigFlavorUpdate(hostname, domain, networkSpee
 	resource "ibm_compute_vm_instance" "terraform-acceptance-test-1" {
 	    hostname = "%s"
 	    domain = "%s"
-	    os_reference_code = "DEBIAN_8_64"
+	    os_reference_code = "DEBIAN_9_64"
 	    datacenter = "wdc04"
 	    network_speed = %s
 	    hourly_billing = true
@@ -1463,13 +1456,13 @@ func testComputeInstanceWithEvault(hostname, domain string) (config string) {
 resource "ibm_compute_vm_instance" "terraform-evault" {
 	hostname = "%s"
 	domain = "%s"
-	datacenter = "mel01"
+	datacenter = "syd01"
 	network_speed = 10
 	hourly_billing = false
 	cores = 1
 	memory = 1024
 	local_disk = false
-	os_reference_code = "DEBIAN_8_64"
+	os_reference_code = "DEBIAN_9_64"
 	disks = [25]
 	evault = 20
 }
@@ -1567,8 +1560,13 @@ func testComputeInstanceWithRetryInvalid(hostname, domain string) (config string
 `, hostname, domain)
 }
 
-func testComputeInstanceWithPlacementGroup(hostname, domain string) (config string) {
+func testComputeInstanceWithPlacementGroup(hostname, domain, placementGroup string) (config string) {
 	return fmt.Sprintf(`
+	resource "ibm_compute_placement_group" "placementGroup" {
+		name = "%s"
+		datacenter = "dal05"
+		pod = "pod01"
+	}
 resource "ibm_compute_vm_instance" "terraform-pgroup" {
 	hostname = "%s"
 	domain = "%s"
@@ -1578,11 +1576,11 @@ resource "ibm_compute_vm_instance" "terraform-pgroup" {
 	cores = 1
 	memory = 1024
 	local_disk = false
-	os_reference_code = "DEBIAN_8_64"
+	os_reference_code = "DEBIAN_9_64"
 	disks = [25]
-	placement_group_name = "%s"
+	placement_group_name = ibm_compute_placement_group.placementGroup.name
 }
-`, hostname, domain, placementGroupName)
+`, placementGroup, hostname, domain)
 }
 
 func testAccIBMComputeVMInstanceTransient(hostname, domain, networkSpeed, flavor, userMetadata, tags string) string {
@@ -1590,7 +1588,7 @@ func testAccIBMComputeVMInstanceTransient(hostname, domain, networkSpeed, flavor
 	resource "ibm_compute_vm_instance" "terraform-transient" {
 	    hostname = "%s"
 	    domain = "%s"
-	    os_reference_code = "DEBIAN_8_64"
+	    os_reference_code = "DEBIAN_9_64"
 	    datacenter = "wdc04"
 	    network_speed = %s
 	    hourly_billing = true

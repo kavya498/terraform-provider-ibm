@@ -217,7 +217,7 @@ const testAccCheckIBMStorageFileConfig_basic = `
 resource "ibm_compute_vm_instance" "storagevm1" {
     hostname = "storagevm1"
     domain = "terraformuat.ibm.com"
-    os_reference_code = "DEBIAN_8_64"
+    os_reference_code = "DEBIAN_9_64"
     datacenter = "dal05"
     network_speed = 100
     hourly_billing = true
@@ -247,7 +247,7 @@ const testAccCheckIBMStorageFileConfig_update = `
 resource "ibm_compute_vm_instance" "storagevm1" {
     hostname = "storagevm1"
     domain = "terraformuat.ibm.com"
-    os_reference_code = "DEBIAN_8_64"
+    os_reference_code = "DEBIAN_9_64"
     datacenter = "dal05"
     network_speed = 100
     hourly_billing = true
@@ -281,7 +281,7 @@ const testAccCheckIBMStorageFileConfig_enablesnapshot = `
 resource "ibm_compute_vm_instance" "storagevm1" {
     hostname = "storagevm1"
     domain = "terraformuat.ibm.com"
-    os_reference_code = "DEBIAN_8_64"
+    os_reference_code = "DEBIAN_9_64"
     datacenter = "dal05"
     network_speed = 100
     hourly_billing = true
@@ -327,7 +327,7 @@ const testAccCheckIBMStorageFileConfig_updatesnapshot = `
 resource "ibm_compute_vm_instance" "storagevm1" {
     hostname = "storagevm1"
     domain = "terraformuat.ibm.com"
-    os_reference_code = "DEBIAN_8_64"
+    os_reference_code = "DEBIAN_9_64"
     datacenter = "dal05"
     network_speed = 100
     hourly_billing = true
@@ -374,7 +374,7 @@ const testAccCheckIBMStorageFileWithTag = `
 resource "ibm_compute_vm_instance" "storagevm1" {
     hostname = "storagevm1"
     domain = "terraformuat.ibm.com"
-    os_reference_code = "DEBIAN_8_64"
+    os_reference_code = "DEBIAN_9_64"
     datacenter = "dal05"
     network_speed = 100
     hourly_billing = true
@@ -399,7 +399,7 @@ const testAccCheckIBMStorageFileWithUpdatedTag = `
 resource "ibm_compute_vm_instance" "storagevm1" {
     hostname = "storagevm1"
     domain = "terraformuat.ibm.com"
-    os_reference_code = "DEBIAN_8_64"
+    os_reference_code = "DEBIAN_9_64"
     datacenter = "dal05"
     network_speed = 100
     hourly_billing = true
@@ -424,7 +424,7 @@ const testAccCheckIBMStorageFileConfigWithHourlyBilling = `
 resource "ibm_compute_vm_instance" "storagevm1" {
     hostname = "storagevm1"
     domain = "terraformuat.ibm.com"
-    os_reference_code = "DEBIAN_8_64"
+    os_reference_code = "DEBIAN_9_64"
     datacenter = "dal09"
     network_speed = 100
     hourly_billing = true
