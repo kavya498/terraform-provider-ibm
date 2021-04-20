@@ -246,7 +246,23 @@ func dataSourceIBMSecretsManagerSecretRead(context context.Context, d *schema.Re
 		return diag.FromErr(err)
 	}
 	region := bluemixSession.Config.Region
-
+	// var fileMap map[string]interface{}
+	// if f := envFallBack([]string{"IBMCLOUD_ENDPOINTS_FILE", "IC_ENDPOINTS_FILE"}, bluemixSession.Config.EndpointsFile); f != "" {
+	// 	jsonFile, err := os.Open(f)
+	// 	if err != nil {
+	// 		fmt.Printf("Unable to open File %s", err)
+	// 	}
+	// 	defer jsonFile.Close()
+	// 	bytes, err := ioutil.ReadAll(jsonFile)
+	// 	if err != nil {
+	// 		fmt.Printf("Unable to read File %s", err)
+	// 	}
+	// 	err = json.Unmarshal([]byte(bytes), &fileMap)
+	// 	if err != nil {
+	// 		fmt.Printf("Unable to unmarshal File %s", err)
+	// 	}
+	// 	log.Printf("********************* %+v", fileMap)
+	// }
 	secretsManagerClient, err := meta.(ClientSession).SecretsManagerV1()
 	if err != nil {
 		return diag.FromErr(err)
@@ -272,10 +288,14 @@ func dataSourceIBMSecretsManagerSecretRead(context context.Context, d *schema.Re
 
 	if crnData[4] == "secrets-manager" {
 		if endpointType == "private" {
-			smEndpointURL = "https://" + instanceID + "private" + "." + region + ".secrets-manager.appdomain.cloud"
+			smEndpointURL = "https://" + instanceID + "." + "private" + "." + region + ".secrets-manager.appdomain.cloud"
 		} else {
 			smEndpointURL = "https://" + instanceID + "." + region + ".secrets-manager.appdomain.cloud"
 		}
+		// if fileMap != nil && bluemixSession.Config.Visibility != "public-and-private" {
+		// 	smEndpointURL = fileFallBack(fileMap, bluemixSession.Config.Visibility, "IBMCLOUD_SECRETS_MANAGER_API_ENDPOINT", bluemixSession.Config.Region, smEndpointURL)
+		// 	log.Println("********[KP_URL]*********", smEndpointURL)
+		// }
 		smUrl := envFallBack([]string{"IBMCLOUD_SECRETS_MANAGER_API_ENDPOINT"}, smEndpointURL)
 		secretsManagerClient.Service.Options.URL = smUrl
 	} else {

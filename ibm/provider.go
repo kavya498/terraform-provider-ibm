@@ -8,8 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/IBM-Cloud/terraform-provider-ibm/ibm/internal/mutexkv"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/IBM-Cloud/terraform-provider-ibm/ibm/internal/mutexkv"
 )
 
 // This is a global MutexKV for use within this plugin.
@@ -160,6 +161,12 @@ func Provider() *schema.Provider {
 				ValidateFunc: validateAllowedStringValue([]string{"public", "private", "public-and-private"}),
 				Description:  "Visibility of the provider if it is private or public.",
 				DefaultFunc:  schema.MultiEnvDefaultFunc([]string{"IC_VISIBILITY", "IBMCLOUD_VISIBILITY"}, "public"),
+			},
+			"endpoints_file": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Path of the file that contains private and public regional endpoints mapping",
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{"IC_ENDPOINTS_FILE", "IBMCLOUD_ENDPOINTS_FILE"}, nil),
 			},
 		},
 
@@ -742,6 +749,10 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	if v, ok := d.GetOk("visibility"); ok {
 		visibility = v.(string)
 	}
+	var file string
+	if f, ok := d.GetOk("endpoints_file"); ok {
+		file = f.(string)
+	}
 
 	resourceGrp := d.Get("resource_group").(string)
 	region := d.Get("region").(string)
@@ -776,6 +787,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		IAMRefreshToken:      iamRefreshToken,
 		Zone:                 zone,
 		Visibility:           visibility,
+		EndpointsFile:        file,
 		//PowerServiceInstance: powerServiceInstance,
 	}
 

@@ -5,15 +5,16 @@ package ibm
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	gohttp "net/http"
 	"os"
 	"strings"
 	"time"
-
 	// Added code for the Power Colo Offering
 
 	apigateway "github.com/IBM/apigateway-go-sdk"
@@ -167,8 +168,9 @@ type Config struct {
 	PowerServiceInstance string
 
 	// Zone
-	Zone       string
-	Visibility string
+	Zone          string
+	Visibility    string
+	EndpointsFile string
 }
 
 //Session stores the information required for communication with the SoftLayer and Bluemix API
@@ -1052,7 +1054,23 @@ func (c *Config) ClientSession() (interface{}, error) {
 	session.functionClient, session.functionConfigErr = FunctionClient(sess.BluemixSession.Config)
 
 	BluemixRegion = sess.BluemixSession.Config.Region
-
+	var fileMap map[string]interface{}
+	if f := envFallBack([]string{"IBMCLOUD_ENDPOINTS_FILE", "IC_ENDPOINTS_FILE"}, c.EndpointsFile); f != "" {
+		jsonFile, err := os.Open(f)
+		if err != nil {
+			fmt.Printf("Unable to open File %s", err)
+		}
+		defer jsonFile.Close()
+		bytes, err := ioutil.ReadAll(jsonFile)
+		if err != nil {
+			fmt.Printf("Unable to read File %s", err)
+		}
+		err = json.Unmarshal([]byte(bytes), &fileMap)
+		if err != nil {
+			fmt.Printf("Unable to unmarshal File %s", err)
+		}
+		log.Printf("********************* %+v", fileMap)
+	}
 	accv1API, err := accountv1.New(sess.BluemixSession)
 	if err != nil {
 		session.accountV1ConfigErr = fmt.Errorf("Error occured while configuring Bluemix Accountv1 Service: %q", err)
@@ -1099,6 +1117,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 	if c.Visibility == "private" || c.Visibility == "public-and-private" {
 		kpurl = contructEndpoint(fmt.Sprintf("private.%s.kms", c.Region), cloudEndpoint)
 	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		kpurl = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_KP_API_ENDPOINT", c.Region, kpurl)
+		log.Println("********[KP_URL]*********", kpurl)
+	}
 	options := kp.ClientConfig{
 		BaseURL:       envFallBack([]string{"IBMCLOUD_KP_API_ENDPOINT"}, kpurl),
 		Authorization: sess.BluemixSession.Config.IAMAccessToken,
@@ -1114,6 +1136,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 	kmsurl := contructEndpoint(fmt.Sprintf("%s.kms", c.Region), cloudEndpoint)
 	if c.Visibility == "private" || c.Visibility == "public-and-private" {
 		kmsurl = contructEndpoint(fmt.Sprintf("private.%s.kms", c.Region), cloudEndpoint)
+	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		kmsurl = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_KP_API_ENDPOINT", c.Region, kmsurl)
+		log.Println("********[KP_URL]*********", kmsurl)
 	}
 	kmsOptions := kp.ClientConfig{
 		BaseURL:       envFallBack([]string{"IBMCLOUD_KP_API_ENDPOINT"}, kmsurl),
@@ -1149,6 +1175,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 	if c.Visibility == "private" {
 		session.catalogManagementClientErr = fmt.Errorf("Catalog Management resource doesnot support private endpoints")
 	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		catalogManagementURL = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_CATALOG_MANAGEMENT_API_ENDPOINT", c.Region, catalogManagementURL)
+		log.Println("********[KP_URL]*********", catalogManagementURL)
+	}
 	catalogManagementClientOptions := &catalogmanagementv1.CatalogManagementV1Options{
 		URL:           envFallBack([]string{"IBMCLOUD_CATALOG_MANAGEMENT_API_ENDPOINT"}, catalogManagementURL),
 		Authenticator: authenticator,
@@ -1175,6 +1205,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 		} else {
 			schematicsEndpoint = "https://schematics.cloud.ibm.com"
 		}
+	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		schematicsEndpoint = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_SCHEMATICS_API_ENDPOINT", c.Region, schematicsEndpoint)
+		log.Println("********[KP_URL]*********", schematicsEndpoint)
 	}
 	schematicsClientOptions := &schematicsv1.SchematicsV1Options{
 		Authenticator: authenticator,
@@ -1207,6 +1241,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 			vpcclassicurl = contructEndpoint(fmt.Sprintf("%s.iaas", c.Region), fmt.Sprintf("%s/v1", cloudEndpoint))
 		}
 	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		vpcclassicurl = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_IS_API_ENDPOINT", c.Region, vpcclassicurl)
+		log.Println("********[KP_URL]*********", vpcclassicurl)
+	}
 	vpcclassicoptions := &vpcclassic.VpcClassicV1Options{
 		URL:           envFallBack([]string{"IBMCLOUD_IS_API_ENDPOINT"}, vpcclassicurl),
 		Authenticator: authenticator,
@@ -1235,6 +1273,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 		}
 		vpcurl = contructEndpoint(fmt.Sprintf("%s.iaas", c.Region), fmt.Sprintf("%s/v1", cloudEndpoint))
 	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		vpcurl = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_IS_NG_API_ENDPOINT", c.Region, vpcurl)
+		log.Println("********[KP_URL]*********", vpcurl)
+	}
 	vpcoptions := &vpc.VpcV1Options{
 		URL:           envFallBack([]string{"IBMCLOUD_IS_NG_API_ENDPOINT"}, vpcurl),
 		Authenticator: authenticator,
@@ -1252,6 +1294,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 	if c.Visibility == "private" {
 		session.pushServiceClientErr = fmt.Errorf("Push Service API doesnot support private endpoints")
 	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		pnurl = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_PUSH_API_ENDPOINT", c.Region, pnurl)
+		log.Println("********[KP_URL]*********", pnurl)
+	}
 	pushNotificationOptions := &pushservicev1.PushServiceV1Options{
 		URL:           envFallBack([]string{"IBMCLOUD_PUSH_API_ENDPOINT"}, pnurl),
 		Authenticator: authenticator,
@@ -1265,10 +1311,14 @@ func (c *Config) ClientSession() (interface{}, error) {
 		session.pushServiceClientErr = fmt.Errorf("Error occured while configuring push notification service: %q", err)
 	}
 
-	//cosconfigurl := fmt.Sprintf("https://%s.iaas.cloud.ibm.com/v1", c.Region)
+	cosconfigurl := "https://config.cloud-object-storage.cloud.ibm.com/v1"
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		cosconfigurl = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_COS_CONFIG_ENDPOINT", c.Region, cosconfigurl)
+		log.Println("********[KP_URL]*********", cosconfigurl)
+	}
 	cosconfigoptions := &cosconfig.ResourceConfigurationV1Options{
 		Authenticator: authenticator,
-		URL:           envFallBack([]string{"IBMCLOUD_COS_CONFIG_ENDPOINT"}, "https://config.cloud-object-storage.cloud.ibm.com/v1"),
+		URL:           envFallBack([]string{"IBMCLOUD_COS_CONFIG_ENDPOINT"}, cosconfigurl),
 	}
 	cosconfigclient, err := cosconfig.NewResourceConfigurationV1(cosconfigoptions)
 	if err != nil {
@@ -1381,6 +1431,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 	if c.Visibility == "private" || c.Visibility == "public-and-private" {
 		apicurl = contructEndpoint(fmt.Sprintf("api.private.%s.apigw", c.Region), fmt.Sprintf("%s/controller", cloudEndpoint))
 	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		apicurl = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_API_GATEWAY_ENDPOINT", c.Region, apicurl)
+		log.Println("********[KP_URL]*********", apicurl)
+	}
 	APIGatewayControllerAPIV1Options := &apigateway.ApiGatewayControllerApiV1Options{
 		URL:           envFallBack([]string{"IBMCLOUD_API_GATEWAY_ENDPOINT"}, apicurl),
 		Authenticator: &core.NoAuthAuthenticator{},
@@ -1403,6 +1457,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 	if c.Visibility == "private" || c.Visibility == "public-and-private" {
 		pdnsURL = contructEndpoint("api.private.dns-svcs", fmt.Sprintf("%s/v1", cloudEndpoint))
 	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		pdnsURL = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_PRIVATE_DNS_API_ENDPOINT", c.Region, pdnsURL)
+		log.Println("********[KP_URL]*********", pdnsURL)
+	}
 	dnsOptions := &dns.DnsSvcsV1Options{
 		URL:           envFallBack([]string{"IBMCLOUD_PRIVATE_DNS_API_ENDPOINT"}, pdnsURL),
 		Authenticator: authenticator,
@@ -1421,6 +1479,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 	dlURL := dl.DefaultServiceURL
 	if c.Visibility == "private" || c.Visibility == "public-and-private" {
 		dlURL = contructEndpoint("private.directlink", fmt.Sprintf("%s/v1", cloudEndpoint))
+	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		dlURL = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_DL_API_ENDPOINT", c.Region, dlURL)
+		log.Println("********[KP_URL]*********", dlURL)
 	}
 	directlinkOptions := &dl.DirectLinkV1Options{
 		URL:           envFallBack([]string{"IBMCLOUD_DL_API_ENDPOINT"}, dlURL),
@@ -1441,6 +1503,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 	if c.Visibility == "private" || c.Visibility == "public-and-private" {
 		dlproviderURL = contructEndpoint("private.directlink", fmt.Sprintf("%s/provider/v2", cloudEndpoint))
 	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		dlproviderURL = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_DL_PROVIDER_API_ENDPOINT", c.Region, dlproviderURL)
+		log.Println("********[KP_URL]*********", dlproviderURL)
+	}
 	directLinkProviderV2Options := &dlProviderV2.DirectLinkProviderV2Options{
 		URL:           envFallBack([]string{"IBMCLOUD_DL_PROVIDER_API_ENDPOINT"}, dlproviderURL),
 		Authenticator: authenticator,
@@ -1458,6 +1524,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 	tgURL := tg.DefaultServiceURL
 	if c.Visibility == "private" || c.Visibility == "public-and-private" {
 		tgURL = contructEndpoint("private.transit", fmt.Sprintf("%s/v1", cloudEndpoint))
+	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		tgURL = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_TG_API_ENDPOINT", c.Region, tgURL)
+		log.Println("********[KP_URL]*********", tgURL)
 	}
 	transitgatewayOptions := &tg.TransitGatewayApisV1Options{
 		URL:           envFallBack([]string{"IBMCLOUD_TG_API_ENDPOINT"}, tgURL),
@@ -1498,6 +1568,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 		session.cisLockdownErr = fmt.Errorf("CIS Service doesnt support private endpoints.")
 		session.cisRangeAppErr = fmt.Errorf("CIS Service doesnt support private endpoints.")
 		session.cisWAFRuleErr = fmt.Errorf("CIS Service doesnt support private endpoints.")
+	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		cisURL = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_CIS_API_ENDPOINT", c.Region, cisURL)
+		log.Println("********[KP_URL]*********", cisURL)
 	}
 	cisEndPoint := envFallBack([]string{"IBMCLOUD_CIS_API_ENDPOINT"}, cisURL)
 
@@ -1892,6 +1966,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 			iamURL = contructEndpoint("private.iam", cloudEndpoint)
 		}
 	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		iamURL = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_IAM_API_ENDPOINT", c.Region, iamURL)
+		log.Println("********[KP_URL]*********", iamURL)
+	}
 	iamIdentityOptions := &iamidentity.IamIdentityV1Options{
 		Authenticator: authenticator,
 		URL:           envFallBack([]string{"IBMCLOUD_IAM_API_ENDPOINT"}, iamURL),
@@ -1920,6 +1998,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 		} else {
 			rmURL = resourcemanager.DefaultServiceURL
 		}
+	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		rmURL = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_RESOURCE_MANAGEMENT_API_ENDPOINT", c.Region, rmURL)
+		log.Println("********[KP_URL]*********", rmURL)
 	}
 	resourceManagerOptions := &resourcemanager.ResourceManagerV2Options{
 		Authenticator: authenticator,
@@ -1951,6 +2033,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 			enterpriseURL = enterprisemanagementv1.DefaultServiceURL
 		}
 	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		enterpriseURL = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_ENTERPRISE_API_ENDPOINT", c.Region, enterpriseURL)
+		log.Println("********[KP_URL]*********", enterpriseURL)
+	}
 	enterpriseManagementClientOptions := &enterprisemanagementv1.EnterpriseManagementV1Options{
 		Authenticator: authenticator,
 		URL:           envFallBack([]string{"IBMCLOUD_ENTERPRISE_API_ENDPOINT"}, enterpriseURL),
@@ -1979,6 +2065,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 		} else {
 			rcURL = resourcecontroller.DefaultServiceURL
 		}
+	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		rcURL = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_RESOURCE_CONTROLLER_API_ENDPOINT", c.Region, rcURL)
+		log.Println("********[KP_URL]*********", rcURL)
 	}
 	resourceControllerOptions := &resourcecontroller.ResourceControllerV2Options{
 		Authenticator: authenticator,
@@ -2015,7 +2105,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 	if c.Visibility == "private" || c.Visibility == "public-and-private" {
 		containerEndpoint = contructEndpoint(fmt.Sprintf("private.%s.containers", c.Region), fmt.Sprintf("%s/global", cloudEndpoint))
 	}
-
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		containerEndpoint = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_SATELLITE_API_ENDPOINT", c.Region, containerEndpoint)
+		log.Println("********[KP_URL]*********", containerEndpoint)
+	}
 	kubernetesServiceV1Options := &kubernetesserviceapiv1.KubernetesServiceApiV1Options{
 		URL:           envFallBack([]string{"IBMCLOUD_SATELLITE_API_ENDPOINT"}, containerEndpoint),
 		Authenticator: authenticator,
@@ -2080,6 +2173,7 @@ func newSession(c *Config) (*Session, error) {
 			ResourceGroup: c.ResourceGroup,
 			RetryDelay:    &c.RetryDelay,
 			MaxRetries:    &c.RetryCount,
+			Visibility:    c.Visibility,
 		}
 		sess, err := bxsession.New(bmxConfig)
 		if err != nil {
@@ -2100,6 +2194,7 @@ func newSession(c *Config) (*Session, error) {
 			ResourceGroup: c.ResourceGroup,
 			RetryDelay:    &c.RetryDelay,
 			MaxRetries:    &c.RetryCount,
+			Visibility:    c.Visibility,
 			//PowerServiceInstance: c.PowerServiceInstance,
 		}
 		sess, err := bxsession.New(bmxConfig)
@@ -2200,6 +2295,16 @@ func envFallBack(envs []string, defaultValue string) string {
 	for _, k := range envs {
 		if v := os.Getenv(k); v != "" {
 			return v
+		}
+	}
+	return defaultValue
+}
+func fileFallBack(fileMap map[string]interface{}, visibility, key, region, defaultValue string) string {
+	if val, ok := fileMap[key]; ok {
+		if v, ok := val.(map[string]interface{})[visibility]; ok {
+			if r, ok := v.(map[string]interface{})[region]; ok && r.(string) != "" {
+				return r.(string)
+			}
 		}
 	}
 	return defaultValue
