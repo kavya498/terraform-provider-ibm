@@ -5,8 +5,10 @@ package ibm
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	gohttp "net/http"
@@ -169,6 +171,7 @@ type Config struct {
 	// Zone
 	Zone       string
 	Visibility string
+	File       string
 }
 
 //Session stores the information required for communication with the SoftLayer and Bluemix API
@@ -1052,7 +1055,23 @@ func (c *Config) ClientSession() (interface{}, error) {
 	session.functionClient, session.functionConfigErr = FunctionClient(sess.BluemixSession.Config)
 
 	BluemixRegion = sess.BluemixSession.Config.Region
-
+	var fileMap map[string]interface{}
+	if f := envFallBack([]string{"IBMCLOUD_FILE"}, c.File); f != "" {
+		jsonFile, err := os.Open(f)
+		if err != nil {
+			fmt.Printf("Unable to open File %s", err)
+		}
+		defer jsonFile.Close()
+		bytes, err := ioutil.ReadAll(jsonFile)
+		if err != nil {
+			fmt.Printf("Unable to read File %s", err)
+		}
+		err = json.Unmarshal([]byte(bytes), &fileMap)
+		if err != nil {
+			fmt.Printf("Unable to unmarshal File %s", err)
+		}
+		log.Printf("********************* %+v", fileMap)
+	}
 	accv1API, err := accountv1.New(sess.BluemixSession)
 	if err != nil {
 		session.accountV1ConfigErr = fmt.Errorf("Error occured while configuring Bluemix Accountv1 Service: %q", err)
@@ -1098,6 +1117,10 @@ func (c *Config) ClientSession() (interface{}, error) {
 	kpurl := contructEndpoint(fmt.Sprintf("%s.kms", c.Region), cloudEndpoint)
 	if c.Visibility == "private" || c.Visibility == "public-and-private" {
 		kpurl = contructEndpoint(fmt.Sprintf("private.%s.kms", c.Region), cloudEndpoint)
+	}
+	if fileMap != nil && c.Visibility != "public-and-private" {
+		kpurl = fileFallBack(fileMap, c.Visibility, "IBMCLOUD_KP_API_ENDPOINT", c.Region, kpurl)
+		log.Println("********[KP_URL]*********", kpurl)
 	}
 	options := kp.ClientConfig{
 		BaseURL:       envFallBack([]string{"IBMCLOUD_KP_API_ENDPOINT"}, kpurl),
@@ -2200,6 +2223,16 @@ func envFallBack(envs []string, defaultValue string) string {
 	for _, k := range envs {
 		if v := os.Getenv(k); v != "" {
 			return v
+		}
+	}
+	return defaultValue
+}
+func fileFallBack(fileMap map[string]interface{}, visibility, key, region, defaultValue string) string {
+	if val, ok := fileMap[key]; ok {
+		if v, ok := val.(map[string]interface{})[visibility]; ok {
+			if r, ok := v.(map[string]interface{})[region]; ok && r.(string) != "" {
+				return r.(string)
+			}
 		}
 	}
 	return defaultValue
