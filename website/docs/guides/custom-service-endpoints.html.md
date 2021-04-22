@@ -6,42 +6,41 @@ description: |-
   Configuring the IBM Cloud Provider plugin for Terraform to connect to custom IBM service endpoints.
 ---
 
-# Custom Service Endpoint Configuration
+# Customizing default cloud service endpoints
 
-The IBM Cloud Provider plugin for Terraform configuration can be customized to connect to non-default IBM service endpoints  This may be useful for environments with specific compliance requirements, such as Classic, VPE or local testing.
+The IBM Cloud Provider plug-in for Terraform can be configured to use non-default IBM Cloud service endpoints. This setup might be useful for environments with specific compliance requirements or where public network connectivity is not allowed.
 
-This guide outlines how to get started with customizing endpoints, the available endpoint configurations, and offers example configurations for working with certain local development and testing solutions.
-
-~> **NOTE:** Support for connecting the IBM Cloud Provider plugin for Terraform with custom endpoints is offered as best effort. Individual Terraform resources may require compatibility updates to work in certain environments. Integration testing by IBM-Cloud during provider changes is exclusively done against default IBM endpoints.
+**Important**: Support for using non-default IBM Cloud service endpoints with the IBM Cloud Provider plug-in for Terraform is offered as best effort. Individual Terraform resources might require compatibility updates to support the declaration of custom service endpoints. By default, the IBM Cloud Provider plug-in is tested with the default IBM Cloud service endpoints. 
 
 <!-- TOC depthFrom:2 -->
 
-- [Getting Started with Custom Endpoints](#getting-started-with-custom-endpoints)
-- [Available Endpoint Customizations](#available-endpoint-customizations)
-- [File Structuring](#file-structuring)
-- [Prioritisation of Endpoints](#prioritisation-of-endpoints)
+- [Getting Started with custom service endpoints](#getting-started-with-custom-service-endpoints)
+- [Supported endpoint customizations](#supported-endpoint-customizations)
+- [File structure for endpoints file](#file-structure-for-endpoints-file)
+- [Prioritisation of endpoints](#prioritisation-of-endpoints)
 <!-- /TOC -->
 
-## Getting Started with Custom Endpoints
+## Getting started with custom service endpoints
 
-To configure the IBM Cloud Provider plugin for Terraform to use customized endpoints, it can be done within `provider` declarations using the `visibility` and `endpoints_file` attributes.   e.g.
+To configure the IBM Cloud Provider plug-in for Terraform to use custom service endpoints, you can use the `visibility` and `endpoints_file` arguments in your `provider` declaration as shown in the following example. 
 
 ```terraform
 provider "ibm" {
-  # ... potentially other provider configuration ...
+  
+  # ... other provider configuration ...
 
   visiblity="private"
   endpoints_file= "endpoints.json"
 }
 ```
 
-If multiple, different IBM Cloud Provider plugin for Terraform configurations are required, see the [Terraform documentation on multiple provider instances](https://www.terraform.io/docs/configuration/providers.html#alias-multiple-provider-instances) for additional information about the `alias` provider configuration and its usage.
+**Tip**: If you want to use different endpoint declarations for other services, you must add multiple provider configurations by creating a provider alias. For more information, see the [Terraform documentation](https://www.terraform.io/docs/configuration/providers.html#alias-multiple-provider-instances).
 
-## Available Endpoint Customizations
+## Supported endpoint customizations 
 
-The IBM Cloud Provider plugin for Terraform allows the following endpoints to be customized:
+The IBM Cloud Provider plug-in for Terraform allows the following endpoints to be customized:
 
-| Service | Endpoint Variable |
+| Service | Endpoint variable |
 |---------|-----------------|
 |API Gateway|IBMCLOUD_API_GATEWAY_ENDPOINT|
 |Account Management|IBMCLOUD_ACCOUNT_MANAGEMENT_API_ENDPOINT|
@@ -75,21 +74,23 @@ The IBM Cloud Provider plugin for Terraform allows the following endpoints to be
 |UAA|IBMCLOUD_UAA_ENDPOINT|
 |User Management|IBMCLOUD_USER_MANAGEMENT_ENDPOINT|
 
-## File Structuring
+## File structure for endpoints file
 
-Public and private regional endpoints of a service should be provided in respective `visibility` blocks for a given endpoint point. Allowed visibility values in a file are `public` and `private`
+To use public and private regional endpoints for a service, you must add these endpoints to a JSON file and categorize them as public or private service endpoints. 
+
+**Syntax**: 
 
 ```json
 {
-    "ENDPOINT":{
-        "VISIBILITY":{
-            "REGION":"<service endpoint>"
+    "<endpoint_variable>":{
+        "<public_or_private>":{
+            "<region>":"<service endpoint>"
         }
     }
 }
 ```
 
- For eg:
+**Example**:
 
 ```json
 {
@@ -124,94 +125,92 @@ Public and private regional endpoints of a service should be provided in respect
 }
 ```
 
-## Prioritisation of Endpoints
+## Prioritisation of endpoints
 
-1. Endpoints defined externally using Environment variable
-2. Endpoints defined using `endpoints_file` in the provider block
-3. Default private or public endpoints based on `visibility` in the provider block 
-### 1. Endpoints defined externally using Environment variable
+The IBM Cloud Provider plug-in gives the following prioritisation 
 
-The provider gives highest priority to the exported environment variables (refer to the table for variable name); the provider use this endpoint URL to connect to the IBM Cloud Service, it will ignore the visibility & endpoint_file settings defined in the provider block.
+1. Endpoints defined by using environment variables
+2. Endpoints defined by using the `endpoints_file` argument in the provider block
+3. Default private or public service endpoints based on the `visibility` argument in the provider block 
+
+### 1. Define service endpoints by using environment variables
+
+The IBM Cloud Provider plug-in gives highest priority to the exported environment variables. To find the environment variable name that you need to export, see **Supportd endpoint customizations**. If an environment variable is exported, the provider uses the defined endpoint URL to connect to the IBM Cloud service. Additional configurations that you made in the provider block, such as the `visibility` or `endpoints_file` arguments, are ignored. 
+
+1. Specify your provider block with or without the `visibility` and `endpoint_file` arguments. 
+   ```terraform
+   provider "ibm" {
+    # ... other provider configuration ...
+   }
+   ```
+
+2. Export the environment variable for your IBM Cloud service and set it to the IBM Cloud service endpoint that you want to use. 
+   ```text
+   export IBMCLOUD_API_GATEWAY_ENDPOINT="<endpoint_url>" 
+   ```
+   
+3. Initialize the Terraform CLI. The IBM Cloud Provider plug-in automatically loads the environment variables. 
+4. Run other Terraform commands, such as `terraform plan` or `terraform apply`. 
 
 
-Eg:
+### 2. Define service endpoints by using an endpoints file 
 
-Define your provider block with/without `visibility` and `endpoint_file` attributes and export the endpoints environment variable before running any of terrfaorm commands.
-IBM Terraform provider initialises respective service client with the exported endpoint.
+You can declare all your service endpoints in a JSON file and either reference this file in your provider block by using the `endpoints_file` argument, or export the path to your file with the `IBMCLOUD_ENDPOINTS_FILE` environment variable. The endpoints file can include private and public service endpoints, and you can also specify different endpoints for each region. Depending on the `visibility` and `region` settings in your provider block, the IBM Cloud Provider plug-in determines the endpoint from the endpoint file that you want to use.  
 
-~> **NOTE:**  These endpoints can't be defined as provider level arguments but, only declared as environment variables.
+**Note:**  
+
+- Use the `endpoints_file` argument to reference the endpoints file in your provider block. 
+- Use the `IBMCLOUD_ENDPOINTS_FILE` environment variable to export the path to your endpoints file.
+- Use the `visibility` argument along with the `endpoints_file` in the provider block to determine the `public` and `private` endpoints.
+- Supported values for the `visibility` argument when the `endpoints_file` argument is set, include `public` and `private`. Default value: `public. 
+
+**Syntax for referencing the endpoints file in the provider block**: 
 
 ```terraform
-provider "ibm" {
-    # ... potentially other provider configuration ...
-}
+    provider "ibm" {
+        # ... other provider configuration ...
+        endpoints_file = "<file_path_to_endpoints_file>"
+        visibility     = "<private_or_public>"
+    }
 ```
 
-```text
-export IBMCLOUD_API_GATEWAY_ENDPOINT="<endpoint_value>" 
-```
+**Syntax for exporting the path to the endpoints file as an environment variable**: 
 
-### 2. Endpoints defined using `endpoints_file` in the provider block
+1. Specify your provider block with or without the `visibility` and `endpoint_file` arguments. 
+   ```terraform
+    provider "ibm" {
+        # ... other provider configuration ...
+    }
 
-The provider will use this endpoint_file value to fetch the endpoint URL to connect to the IBM Cloud Service, depending on the `region` and  `visibility` settings in the provider block. 
+   ```
+2. Export the path to your endpoints file as an environment variable. You can also declare if you want to use the private or public service endpoint from your endpoints file by using the `IC_VISIBILITY` environment variable.  
+   ```text
+   export IC_ENDPOINTS_FILE="<endpoint_value>"
+   export IC_VISIBILITY="<private_or_public>"
+   ```
 
-**NOTE:**  
+### 3. Use the default private or public service endpoint based on the `visibility` setting in the provider block 
 
-- Provider level argument for Endpoints File - `endpoints_file`
-- Environment variable for Endpoints File    - `IBMCLOUD_ENDPOINTS_FILE`
-- `visibility` argument should also be passed along with the `endpoints_file` for the provider to determine `public` and `private` endpoints.
-- Allowable values for `visibility` when `endpoints_file` attribute is given are `public` and `private`. Default: `public`
+If for a given `region` and `visibility` setting in your provider block, the IBM Cloud Provider plug-in cannot find an environment variable or an endpoint in your endpoints file, the default service endpoint that is implemented in the IBM Cloud Provider plug-in is used. 
 
-Eg:
+**Note:** In order to use the private endpoint from an IBM Cloud resource, you must have a VRF-enabled IBM cloudaccount. If the service does not support private endpoints, the Terraform resource or datas ource will log an error.
+
+- Supported values for the `visibility` argument are `public`, `private`, `public-and-private`. Default value: `public`.
+  - If the visibility is set to `public`, the provider uses a regional public endpoint or the global public endpoint. The regional public endpoints has higher precedence.
+  - If the visibility is set to `private`, the. provider uses a regional private endpoint or the global private endpoint. The regional private endpoint is given higher precedence.  
+  - If the visibility is set to `public-and-private`, the provider uses the regional private endpoints or the global private endpoint. If the service does not support regional or global private endpoints, the provider uses the regional or global public endpoint.
+- You can set the visibility by using the `IC_VISIBILITY` (higher precedence) or `IBMCLOUD_VISIBILITY` environment variable.
+
+**Syntax for using the `visibility` argument in the provider block**:
 
 ```terraform
     provider "ibm" {
         # ... potentially other provider configuration ...
-        endpoints_file = "endpoints file path"
         visibility     = "private"
     }
 ```
 
-These arguments can also be exported as environment variables instead of defining at provider level
-
-Eg:
-
-```terraform
-    provider "ibm" {
-        # ... potentially other provider configuration ...
-    }
-
-```
-
-```text
-export IC_ENDPOINTS_FILE="<endpoint_value>"
-export IC_VISIBILITY="private"
-```
-
-### 3. Default private or public endpoints based on `visibility` in the provider block 
-
-For a given `region` and  `visibility` settings, if there is no endpoint environment variable and no endpoint_file in the provider block, then the provider will use the default (or pre-defined) endpoint URL settings implemented by the `IBM Cloud Provider plugin for Terraform`
-
-~> **NOTE:**  In order to use the private endpoint from an IBM Cloud resource (such as, a classic VM instance), one must have VRF-enabled account.  If the Cloud service does not support private endpoint, the terraform resource or datasource will log an error.
-
-- Allowable values for `visibility` are `public`, `private`, `public-and-private`. Default: `public`.
-  - If visibility is set to `public`, provider uses regional public endpoint or global public endpoint. The regional public endpoints has higher precedence.
-  - If visibility is set to `private`, provider uses regional private endpoint or global private endpoint. The regional private endpoint is given higher precedence.  
-  - If visibility is set to `public-and-private`, provider uses regional private endpoints or global private endpoint. If service doesn't support regional or global private endpoints it will use the regional or global public endpoint.
-- This can also be sourced from the `IC_VISIBILITY` (higher precedence) or `IBMCLOUD_VISIBILITY` environment variable.
-
-Eg:
-
-```terraform
-    provider "ibm" {
-        # ... potentially other provider configuration ...
-        visibility     = "private"
-    }
-```
-
-These arguments can also be exported as environment variable instead of defining at provider level
-
-Eg:
+**Syntax for setting the visibility as an environment variable**: 
 
 ```terraform
     provider "ibm" {
