@@ -15,6 +15,7 @@ import (
 
 	"github.com/IBM/ibm-hpcs-tke-sdk/tkesdk"
 	rc "github.com/IBM/platform-services-go-sdk/resourcecontrollerv2"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -25,11 +26,11 @@ import (
 
 func resourceIBMHPCS() *schema.Resource {
 	return &schema.Resource{
-		Create:   resourceIBMHPCSCreate,
-		Read:     resourceIBMHPCSRead,
-		Update:   resourceIBMHPCSUpdate,
-		Delete:   resourceIBMHPCSDelete,
-		Importer: &schema.ResourceImporter{},
+		CreateContext: resourceIBMHPCSCreate,
+		ReadContext:   resourceIBMHPCSRead,
+		UpdateContext: resourceIBMHPCSUpdate,
+		DeleteContext: resourceIBMHPCSDelete,
+		Importer:      &schema.ResourceImporter{},
 
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Minute),
@@ -313,10 +314,10 @@ func resourceIBMHPCSValidator() *ResourceValidator {
 	return &ibmResourceInstanceResourceValidator
 }
 
-func resourceIBMHPCSCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceIBMHPCSCreate(context context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	rsConClient, err := meta.(ClientSession).ResourceControllerV2API()
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	serviceName := "hs-crypto"
@@ -330,36 +331,36 @@ func resourceIBMHPCSCreate(d *schema.ResourceData, meta interface{}) error {
 	// Fetch Service Plan ID using Global Catalog APIs
 	rsCatClient, err := meta.(ClientSession).ResourceCatalogAPI()
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	rsCatRepo := rsCatClient.ResourceCatalog()
 
 	serviceOff, err := rsCatRepo.FindByName(serviceName, true)
 	if err != nil {
-		return fmt.Errorf("error retrieving service offering: %s", err)
+		return diag.FromErr(fmt.Errorf("error retrieving service offering: %s", err))
 	}
 
 	if metadata, ok := serviceOff[0].Metadata.(*models.ServiceResourceMetadata); ok {
 		if !metadata.Service.RCProvisionable {
-			return fmt.Errorf("%s cannot be provisioned by resource controller", serviceName)
+			return diag.FromErr(fmt.Errorf("%s cannot be provisioned by resource controller", serviceName))
 		}
 	} else {
-		return fmt.Errorf("cannot create instance of resource %s", serviceName)
+		return diag.FromErr(fmt.Errorf("cannot create instance of resource %s", serviceName))
 	}
 
 	servicePlan, err := rsCatRepo.GetServicePlanID(serviceOff[0], plan)
 	if err != nil {
-		return fmt.Errorf("error retrieving plan: %s", err)
+		return diag.FromErr(fmt.Errorf("error retrieving plan: %s", err))
 	}
 	rsInst.ResourcePlanID = &servicePlan
 
 	// Fetch Catalog CRN using Global Catalog APIs
 	deployments, err := rsCatRepo.ListDeployments(servicePlan)
 	if err != nil {
-		return fmt.Errorf("error retrieving deployment for plan %s : %s", plan, err)
+		return diag.FromErr(fmt.Errorf("error retrieving deployment for plan %s : %s", plan, err))
 	}
 	if len(deployments) == 0 {
-		return fmt.Errorf("no deployment found for service plan : %s", plan)
+		return diag.FromErr(fmt.Errorf("no deployment found for service plan : %s", plan))
 	}
 	deployments, supportedLocations := filterDeployments(deployments, location)
 	if len(deployments) == 0 {
@@ -367,7 +368,7 @@ func resourceIBMHPCSCreate(d *schema.ResourceData, meta interface{}) error {
 		for l := range supportedLocations {
 			locationList = append(locationList, l)
 		}
-		return fmt.Errorf("no deployment found for service plan %s at location %s.\n valid location(s) are: %q", plan, location, locationList)
+		return diag.FromErr(fmt.Errorf("no deployment found for service plan %s at location %s.\n valid location(s) are: %q", plan, location, locationList))
 	}
 	rsInst.Target = &deployments[0].CatalogCRN
 
@@ -378,7 +379,7 @@ func resourceIBMHPCSCreate(d *schema.ResourceData, meta interface{}) error {
 	} else {
 		defaultRg, err := defaultResourceGroup(meta)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 		rsInst.ResourceGroup = &defaultRg
 	}
@@ -400,13 +401,13 @@ func resourceIBMHPCSCreate(d *schema.ResourceData, meta interface{}) error {
 	// Create HPCS Instance
 	instance, resp, err := rsConClient.CreateResourceInstance(&rsInst)
 	if err != nil || instance == nil {
-		return fmt.Errorf("error when creating HPCS instance: %s with resp code: %s", err, resp)
+		return diag.FromErr(fmt.Errorf("error when creating HPCS instance: %s with resp code: %s", err, resp))
 	}
 	d.SetId(*instance.ID)                       // Set Resource ID
 	_, err = waitForHPCSInstanceCreate(d, meta) // Wait for Instance to be available
 	if err != nil {
-		return fmt.Errorf(
-			"error waiting for create HPCS instance (%s) to be succeeded: %s", d.Id(), err)
+		return diag.FromErr(fmt.Errorf(
+			"error waiting for create HPCS instance (%s) to be succeeded: %s", d.Id(), err))
 	}
 
 	// Update Tags for this Resource using Global Tagging APIs
@@ -420,12 +421,12 @@ func resourceIBMHPCSCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	return resourceIBMHPCSUpdate(d, meta)
+	return resourceIBMHPCSUpdate(context, d, meta)
 }
-func resourceIBMHPCSRead(d *schema.ResourceData, meta interface{}) error {
+func resourceIBMHPCSRead(context context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	rsConClient, err := meta.(ClientSession).ResourceControllerV2API()
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	instanceID := d.Id()
@@ -438,7 +439,7 @@ func resourceIBMHPCSRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("error retrieving HPCS instance: %s with resp code: %s", err, resp)
+		return diag.FromErr(fmt.Errorf("error retrieving HPCS instance: %s with resp code: %s", err, resp))
 	}
 	if instance != nil && (strings.Contains(*instance.State, "removed") || strings.Contains(*instance.State, rsInstanceReclamation)) {
 		log.Printf("[WARN] Removing instance from state because it's in removed or pending_reclamation state")
@@ -473,13 +474,13 @@ func resourceIBMHPCSRead(d *schema.ResourceData, meta interface{}) error {
 	// Set Service Plan
 	rsCatClient, err := meta.(ClientSession).ResourceCatalogAPI()
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	rsCatRepo := rsCatClient.ResourceCatalog()
 
 	servicePlan, err := rsCatRepo.GetServicePlanName(*instance.ResourcePlanID)
 	if err != nil {
-		return fmt.Errorf("error retrieving plan: %s", err)
+		return diag.FromErr(fmt.Errorf("error retrieving plan: %s", err))
 	}
 	d.Set("plan", servicePlan)
 	// Set Instance parameters
@@ -520,18 +521,17 @@ func resourceIBMHPCSRead(d *schema.ResourceData, meta interface{}) error {
 	// Bluemix Session to get Oauth tokens
 	ci, err := hsmClient(d, meta)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	ci.InstanceId = *instance.GUID
 
 	hsmInfo, err := tkesdk.Query(ci)
 	if err != nil {
-		return fmt.Errorf("error Quering HSM config: %s", err)
+		return diag.FromErr(fmt.Errorf("error Quering HSM config: %s", err))
 	}
 	d.Set("hsm_info", FlattenHSMInfo(hsmInfo))
 
 	if validateHSM(hsmInfo) && !d.IsNewResource() {
-		log.Println("********Enter*********")
 		d.Set("admins", nil)
 		d.Set("signature_threshold", nil)
 		d.Set("revocation_threshold", nil)
@@ -540,10 +540,10 @@ func resourceIBMHPCSRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceIBMHPCSUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceIBMHPCSUpdate(context context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	rsConClient, err := meta.(ClientSession).ResourceControllerV2API()
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	instanceID := d.Id()
@@ -561,18 +561,18 @@ func resourceIBMHPCSUpdate(d *schema.ResourceData, meta interface{}) error {
 		service := "hs-crypto"
 		rsCatClient, err := meta.(ClientSession).ResourceCatalogAPI()
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 		rsCatRepo := rsCatClient.ResourceCatalog()
 
 		serviceOff, err := rsCatRepo.FindByName(service, true)
 		if err != nil {
-			return fmt.Errorf("error retrieving service offering: %s", err)
+			return diag.FromErr(fmt.Errorf("error retrieving service offering: %s", err))
 		}
 
 		servicePlan, err := rsCatRepo.GetServicePlanID(serviceOff[0], plan)
 		if err != nil {
-			return fmt.Errorf("error retrieving plan: %s", err)
+			return diag.FromErr(fmt.Errorf("error retrieving plan: %s", err))
 		}
 
 		resourceInstanceUpdate.ResourcePlanID = &servicePlan
@@ -593,7 +593,7 @@ func resourceIBMHPCSUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 	instance, resp, err := rsConClient.GetResourceInstance(&resourceInstanceGet)
 	if err != nil {
-		return fmt.Errorf("error Getting HPCS instance: %s with resp code: %s", err, resp)
+		return diag.FromErr(fmt.Errorf("error Getting HPCS instance: %s with resp code: %s", err, resp))
 	}
 	if d.HasChange("tags") {
 		oldList, newList := d.GetChange(isVPCTags)
@@ -606,13 +606,13 @@ func resourceIBMHPCSUpdate(d *schema.ResourceData, meta interface{}) error {
 	if update && !d.IsNewResource() { // Update RC API only if its not a new resource
 		_, resp, err = rsConClient.UpdateResourceInstance(&resourceInstanceUpdate)
 		if err != nil {
-			return fmt.Errorf("error updating HPCS instance: %s with resp code: %s", err, resp)
+			return diag.FromErr(fmt.Errorf("error updating HPCS instance: %s with resp code: %s", err, resp))
 		}
 
 		_, err = waitForHPCSInstanceUpdate(d, meta)
 		if err != nil {
-			return fmt.Errorf(
-				"error waiting for update HPCS instance (%s) to be succeeded: %s", d.Id(), err)
+			return diag.FromErr(fmt.Errorf(
+				"error waiting for update HPCS instance (%s) to be succeeded: %s", d.Id(), err))
 		}
 	}
 	// Initialise HPCS Crypto Units
@@ -622,35 +622,35 @@ func resourceIBMHPCSUpdate(d *schema.ResourceData, meta interface{}) error {
 			serverURL := url.(string)
 			err := os.Setenv("TKE_SIGNSERV_URL", serverURL)
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 		}
 		hsm_config := expandHSMConfig(d, meta)
 		// Bluemix Session to get Oauth tokens
 		ci, err := hsmClient(d, meta)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 		ci.InstanceId = *instance.GUID
 
 		// Check Transitions
 		problems, err := tkesdk.CheckTransition(ci, hsm_config)
 		if err != nil {
-			return fmt.Errorf("error Checking Transitions: %s", err)
+			return diag.FromErr(fmt.Errorf("error Checking Transitions: %s", err))
 		}
 		if len(problems) != 0 {
-			return fmt.Errorf("error Checking Transitions: %v", problems)
+			return diag.FromErr(fmt.Errorf("error Checking Transitions: %v", problems))
 		}
 		// Update / Initialize Crypto Units
 		hsmDetails, err := tkesdk.Update(ci, hsm_config)
 		if err != nil {
-			return fmt.Errorf("error Updating Crypto Units: %s", err)
+			return diag.FromErr(fmt.Errorf("error Updating Crypto Units: %s", err))
 		}
 		if len(hsmDetails) != 0 {
-			return fmt.Errorf("error Updating Crypto Units..One or more problems were found during initial checks: %v", hsmDetails)
+			return diag.FromErr(fmt.Errorf("error Updating Crypto Units..One or more problems were found during initial checks: %v", hsmDetails))
 		}
 	}
-	return resourceIBMHPCSRead(d, meta)
+	return resourceIBMHPCSRead(context, d, meta)
 }
 func expandHSMConfig(d *schema.ResourceData, meta interface{}) tkesdk.HsmConfig {
 	hsmConfig := tkesdk.HsmConfig{}
@@ -676,10 +676,10 @@ func expandHSMConfig(d *schema.ResourceData, meta interface{}) tkesdk.HsmConfig 
 	}
 	return hsmConfig
 }
-func resourceIBMHPCSDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceIBMHPCSDelete(context context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	rsConClient, err := meta.(ClientSession).ResourceControllerV2API()
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	id := d.Id()
 	resourceInstanceGet := rc.GetResourceInstanceOptions{
@@ -687,19 +687,19 @@ func resourceIBMHPCSDelete(d *schema.ResourceData, meta interface{}) error {
 	}
 	instance, resp, err := rsConClient.GetResourceInstance(&resourceInstanceGet)
 	if err != nil {
-		return fmt.Errorf("error Getting HPCS instance: %s with resp code: %s", err, resp)
+		return diag.FromErr(fmt.Errorf("error Getting HPCS instance: %s with resp code: %s", err, resp))
 	}
 	// Bluemix Session to get Oauth tokens
 	ci, err := hsmClient(d, meta)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	ci.InstanceId = *instance.GUID
 	if url, ok := d.GetOk("signature_server_url"); ok {
 		serverURL := url.(string)
 		err := os.Setenv("TKE_SIGNSERV_URL", serverURL)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 	// Zeroize Crypto Units
@@ -707,14 +707,14 @@ func resourceIBMHPCSDelete(d *schema.ResourceData, meta interface{}) error {
 	// Check Transitions
 	problems, err := tkesdk.CheckTransition(ci, hsm)
 	if err != nil {
-		return fmt.Errorf("error Checking Transitions: %s", err)
+		return diag.FromErr(fmt.Errorf("error Checking Transitions: %s", err))
 	}
 	if len(problems) != 0 {
-		return fmt.Errorf("error Checking Transitions: %v", problems)
+		return diag.FromErr(fmt.Errorf("error Checking Transitions: %v", problems))
 	}
 	err = tkesdk.Zeroize(ci, hsm)
 	if err != nil {
-		return fmt.Errorf("error Zeroizing Crypto Units: %s", err)
+		return diag.FromErr(fmt.Errorf("error Zeroizing Crypto Units: %s", err))
 	}
 
 	// Delete Instance
@@ -725,12 +725,12 @@ func resourceIBMHPCSDelete(d *schema.ResourceData, meta interface{}) error {
 	}
 	resp, error := rsConClient.DeleteResourceInstance(&resourceInstanceDelete)
 	if error != nil {
-		return fmt.Errorf("error deleting HPCS instance: %s with resp code: %s", error, resp)
+		return diag.FromErr(fmt.Errorf("error deleting HPCS instance: %s with resp code: %s", error, resp))
 	}
 	_, err = waitForHPCSInstanceDelete(d, meta)
 	if err != nil {
-		return fmt.Errorf(
-			"error waiting for HPCS instance (%s) to be deleted: %s", d.Id(), err)
+		return diag.FromErr(fmt.Errorf(
+			"error waiting for HPCS instance (%s) to be deleted: %s", d.Id(), err))
 	}
 
 	d.SetId("")
@@ -754,12 +754,12 @@ func waitForHPCSInstanceCreate(d *schema.ResourceData, meta interface{}) (interf
 			instance, resp, err := rsConClient.GetResourceInstance(&resourceInstanceGet)
 			if err != nil {
 				if resp != nil && resp.StatusCode == 404 {
-					return nil, "", fmt.Errorf("the HPCS instance %s does not exist anymore: %v", d.Id(), err)
+					return nil, "", fmt.Errorf("[ERROR] HPCS instance %s does not exist anymore: %v", d.Id(), err)
 				}
-				return nil, "", fmt.Errorf("get on HPCS instance %s failed with resp code: %s, err: %v", d.Id(), resp, err)
+				return nil, "", fmt.Errorf("[ERROR] Get on HPCS instance %s failed with resp code: %s, err: %v", d.Id(), resp, err)
 			}
 			if *instance.State == rsInstanceFailStatus {
-				return instance, *instance.State, fmt.Errorf("the status of HPCS instance %s failed: %v", d.Id(), err)
+				return instance, *instance.State, fmt.Errorf("[ERROR] The status of HPCS instance %s failed: %v", d.Id(), err)
 			}
 			return instance, *instance.State, nil
 		},
@@ -788,12 +788,12 @@ func waitForHPCSInstanceUpdate(d *schema.ResourceData, meta interface{}) (interf
 			instance, resp, err := rsConClient.GetResourceInstance(&resourceInstanceGet)
 			if err != nil {
 				if resp != nil && resp.StatusCode == 404 {
-					return nil, "", fmt.Errorf("The HPCS instance %s does not exist anymore: %v", d.Id(), err)
+					return nil, "", fmt.Errorf("[Error] HPCS instance %s does not exist anymore: %v", d.Id(), err)
 				}
-				return nil, "", fmt.Errorf("Get the HPCS instance %s failed with resp code: %s, err: %v", d.Id(), resp, err)
+				return nil, "", fmt.Errorf("[Error] Get the HPCS instance %s failed with resp code: %s, err: %v", d.Id(), resp, err)
 			}
 			if *instance.State == rsInstanceFailStatus {
-				return instance, *instance.State, fmt.Errorf("The HPCS instance %s failed: %v", d.Id(), err)
+				return instance, *instance.State, fmt.Errorf("[ERROR] The status of HPCS instance %s failed: %v", d.Id(), err)
 			}
 			return instance, *instance.State, nil
 		},
@@ -823,10 +823,10 @@ func waitForHPCSInstanceDelete(d *schema.ResourceData, meta interface{}) (interf
 				if resp != nil && resp.StatusCode == 404 {
 					return instance, rsInstanceSuccessStatus, nil
 				}
-				return nil, "", fmt.Errorf("get on HPCS instance %s failed with resp code: %s, err: %v", d.Id(), resp, err)
+				return nil, "", fmt.Errorf("[Error] Get on HPCS instance %s failed with resp code: %s, err: %v", d.Id(), resp, err)
 			}
 			if *instance.State == rsInstanceFailStatus {
-				return instance, *instance.State, fmt.Errorf("the HPCS instance %s failed to delete: %v", d.Id(), err)
+				return instance, *instance.State, fmt.Errorf("[Error] HPCS instance %s failed to delete: %v", d.Id(), err)
 			}
 			return instance, *instance.State, nil
 		},
@@ -867,7 +867,7 @@ func hsmClient(d *schema.ResourceData, meta interface{}) (tkesdk.CommonInputs, e
 	}
 	err = refreshToken(bluemixSession)
 	if err != nil {
-		return ci, fmt.Errorf("error Refreshing Authentication Token: %s", err)
+		return ci, fmt.Errorf("[Error] Error Refreshing Authentication Token: %s", err)
 	}
 	ci.Region = bluemixSession.Config.Region
 	ci.ApiEndpoint = envFallBack([]string{"IBMCLOUD_ENDPOINT"}, "cloud.ibm.com")
