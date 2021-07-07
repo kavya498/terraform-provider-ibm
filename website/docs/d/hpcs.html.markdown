@@ -29,24 +29,26 @@ The following arguments are supported:
 
 In addition to all arguments above, the following attributes are exported:
 
-* `id` - (String) The unique identifier of this hpcs instance.
-* `plan` - (String) The service plan for this HPCS' instance
-* `location` - (String) The location for this HPCS' instance
-* `service` - (String) The service type (`hs-crypto`) of the instance.
-* `status` - (String) Status of the hpcs instance.
-* `guid` - (String) Unique identifier of resource instance.
 * `crn` - (String) CRN of HPCS Instance
 * `extensions` - (List) The extended metadata as a map associated with the resource instance.
+* `guid` - (String) Unique identifier of resource instance.
 * `hsm_info` - (List) HSM config of HPCS Instance Crypto Units.
+  Nested scheme for `hsm_info`:
+  * `admins` - (List) List of Admins for Crypto Units
+    Nested scheme for `admins`:
+      * `name` - (String) Name of Admin
+      * `ski` - (String) Admin SKI
+  * `current_mk_status` - (String) Status of Current Master Key Register
+  * `current_mkvp` - (String) Current Master Key Register Verification Pattern.
   * `hsm_id` - (String) HSM ID
   * `hsm_location` - (String) HSM Location
   * `hsm_type` - (String) HSM Type.
+  * `new_mk_status` - (String) Status of New Master Key Register
+  * `new_mkvp` - (String) New Master Key Register Verification Pattern
+  * `revocation_threshold` - (Int) Revocation Threshold for Crypto Units
   * `signature_threshold`- (Int) Signature Threshold for Crypto Units
-  * `revocation_threshold` - ((Int)) Revocation Threshold for Crypto Units
-  * `admins` - (List) List of Admins for Crypto Units
-    * `name` - (String) Name of Admin
-    * `ski` - (String) Admin SKI
-  * `new_mk_status` - (String) Status of New Marster Key Registry
-  * `new_mkvp` - (String) New Marster Key Registry Pattern
-  * `current_mk_status` - (String) Status of Current Marster Key Registry
-  * `current_mkvp` - (String) Current Marster Key Registry Pattern.
+* `id` - (String) The unique identifier CRN of this HPCS instance.
+* `location` - (String) The location for this HPCS instance
+* `plan` - (String) The pricing plan for your service instance.
+* `service` - (String) The service type (`hs-crypto`) of the instance.
+* `status` - (String) Status of the hpcs instance.
