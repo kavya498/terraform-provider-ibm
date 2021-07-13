@@ -40,7 +40,7 @@ func resourceIBMHPCS() *schema.Resource {
 
 		CustomizeDiff: customdiff.Sequence(
 			func(_ context.Context, diff *schema.ResourceDiff, v interface{}) error {
-				return immutableResourceCustomizeDiff([]string{"units", "location", "resource_group_id"}, diff)
+				return immutableResourceCustomizeDiff([]string{"units", "location", "resource_group_id", "service"}, diff)
 			},
 			func(_ context.Context, diff *schema.ResourceDiff, v interface{}) error {
 				return resourceTagsCustomizeDiff(diff)
@@ -67,6 +67,12 @@ func resourceIBMHPCS() *schema.Resource {
 				Type:        schema.TypeInt,
 				Required:    true,
 				Description: "Arbitrary parameters to pass. Must be a JSON object",
+			},
+			"service": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "hs-crypto",
+				Description: "The name of the service offering `hs-crypto` ",
 			},
 			"resource_group_id": {
 				Description: "The resource group id",
@@ -320,7 +326,7 @@ func resourceIBMHPCSCreate(context context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	serviceName := "hs-crypto"
+	serviceName := d.Get("service").(string)
 	plan := d.Get("plan").(string)
 	name := d.Get("name").(string)
 	location := d.Get("location").(string)
@@ -558,7 +564,7 @@ func resourceIBMHPCSUpdate(context context.Context, d *schema.ResourceData, meta
 	}
 	if d.HasChange("plan") {
 		plan := d.Get("plan").(string)
-		service := "hs-crypto"
+		service := d.Get("service").(string)
 		rsCatClient, err := meta.(ClientSession).ResourceCatalogAPI()
 		if err != nil {
 			return diag.FromErr(err)
