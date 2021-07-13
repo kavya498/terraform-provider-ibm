@@ -92,3 +92,16 @@ In addition to all arguments above, the following attributes are exported:
 * `status` - (String) Status of the hpcs instance.
 * `update_at` - (String) The date when the instance was last updated.
 * `update_by` - (String) The subject who updated the instance.
+
+## Import
+The `ibm_hpcs` can be imported by using the `crn`.
+
+```bash
+terraform import ibm_hpcs.hpcs <crn>
+```
+
+**Example**
+
+```
+$ terraform import ibm_hpcs.hpcs crn:v1:bluemix:public:hs-crypto:us-south:a/4448261269a14562b839e0a3019ed980:f115115b-5087-4a4e-9cc8-71acf0542c0d::
+```
