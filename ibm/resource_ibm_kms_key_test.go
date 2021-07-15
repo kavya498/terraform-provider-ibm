@@ -17,7 +17,7 @@ import (
 func TestAccIBMKMSResource_basic(t *testing.T) {
 	instanceName := fmt.Sprintf("kms_%d", acctest.RandIntRange(10, 100))
 	cosInstanceName := fmt.Sprintf("cos_%d", acctest.RandIntRange(10, 100))
-	bucketName := fmt.Sprintf("bucket-test77")
+	bucketName := "bucket-test77"
 	keyName := fmt.Sprintf("key_%d", acctest.RandIntRange(10, 100))
 	payload := "LqMWNtSi3Snr4gFNO0PsFFLFRNs57mSXCQE7O2oE+g0="
 
@@ -25,19 +25,19 @@ func TestAccIBMKMSResource_basic(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccCheckIBMKmsResourceStandardConfig(instanceName, keyName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("ibm_kms_key.test", "key_name", keyName),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: testAccCheckIBMKmsResourceImportStandardConfig(instanceName, keyName, payload),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("ibm_kms_key.test", "key_name", keyName),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: testAccCheckIBMKmsResourceRootkeyWithCOSConfig(instanceName, keyName, cosInstanceName, bucketName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("ibm_kms_key.test", "key_name", keyName),
@@ -54,7 +54,7 @@ func TestAccIBMKMSHPCSResource_basic(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccCheckIBMKmsResourceHpcsConfig(hpcsInstanceID, hpcskeyName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("ibm_kms_key.hpcstest", "key_name", hpcskeyName),
@@ -80,14 +80,14 @@ func TestAccIBMKMSResource_ValidExpDate(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccCheckIBMKmsCreateStandardKeyConfig(instanceName, keyName, expirationDateValid),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("ibm_kms_key.test", "key_name", keyName),
 					resource.TestCheckResourceAttr("ibm_kms_key.test", "expiration_date", expirationDateValid),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: testAccCheckIBMKmsCreateRootKeyConfig(instanceName, keyName, expirationDateValid),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("ibm_kms_key.test", "key_name", keyName),
@@ -112,11 +112,11 @@ func TestAccIBMKMSResource_InvalidExpDate(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config:      testAccCheckIBMKmsCreateStandardKeyConfig(instanceName, keyName, expirationDateInvalid),
 				ExpectError: regexp.MustCompile("Invalid time format"),
 			},
-			resource.TestStep{
+			{
 				Config:      testAccCheckIBMKmsCreateRootKeyConfig(instanceName, keyName, expirationDateInvalid),
 				ExpectError: regexp.MustCompile("Invalid time format"),
 			},
@@ -134,7 +134,7 @@ func TestAccIBMKMSKeyPolicy_basic(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccCheckIBMKmsKeyPolicyStandardConfig(instanceName, keyName, rotation_interval, dual_auth_delete),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("ibm_kms_key.test", "key_name", keyName),
@@ -142,7 +142,7 @@ func TestAccIBMKMSKeyPolicy_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("ibm_kms_key.test", "policies.0.dual_auth_delete.0.enabled", "false"),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: testAccCheckIBMKmsKeyPolicyStandardConfig(instanceName, keyName, rotation_interval_new, dual_auth_delete),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("ibm_kms_key.test", "key_name", keyName),
@@ -162,7 +162,7 @@ func TestAccIBMKMSKeyPolicy_rotation(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccCheckIBMKmsKeyPolicyRotation(instanceName, keyName, rotation_interval),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("ibm_kms_key.test", "key_name", keyName),
@@ -181,7 +181,7 @@ func TestAccIBMKMSKeyPolicy_dualAuth(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccCheckIBMKmsKeyPolicyDualAuth(instanceName, keyName, dual_auth_delete),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("ibm_kms_key.test", "key_name", keyName),
@@ -201,7 +201,7 @@ func TestAccIBMKMSKeyPolicy_invalid_interval(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config:      testAccCheckIBMKmsKeyPolicyStandardConfig(instanceName, keyName, rotation_interval, dual_auth_delete),
 				ExpectError: regexp.MustCompile("config is invalid:"),
 			},
