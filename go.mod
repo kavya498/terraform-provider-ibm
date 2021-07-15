@@ -21,6 +21,7 @@ require (
 	github.com/IBM/schematics-go-sdk v0.0.2
 	github.com/IBM/secrets-manager-go-sdk v0.1.19
 	github.com/IBM/vpc-go-sdk v0.8.0
+	github.com/Logicalis/asn1 v0.0.0-20190312173541-d60463189a56 // indirect
 	github.com/ScaleFT/sshkeys v0.0.0-20200327173127-6142f742bca5
 	github.com/Shopify/sarama v1.27.2
 	github.com/apache/incubator-openwhisk-client-go v0.0.0-20171128215515-ad814bc98c32 // indirect

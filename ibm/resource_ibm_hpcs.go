@@ -876,7 +876,10 @@ func hsmClient(d *schema.ResourceData, meta interface{}) (tkesdk.CommonInputs, e
 		return ci, fmt.Errorf("[ERROR] Error Refreshing Authentication Token: %s", err)
 	}
 	ci.Region = bluemixSession.Config.Region
-	ci.ApiEndpoint = envFallBack([]string{"IBMCLOUD_ENDPOINT"}, "cloud.ibm.com")
+	ci.ApiEndpoint = envFallBack([]string{"IBMCLOUD_HPCS_TKE_ENDPOINT"}, "cloud.ibm.com")
+	if bluemixSession.Config.Visibility == "private" || bluemixSession.Config.Visibility == "public-and-private" {
+		ci.ApiEndpoint = envFallBack([]string{"IBMCLOUD_HPCS_TKE_ENDPOINT"}, "private.cloud.ibm.com")
+	}
 	ci.AuthToken = bluemixSession.Config.IAMAccessToken
 
 	return ci, err
