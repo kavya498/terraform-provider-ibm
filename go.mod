@@ -13,7 +13,8 @@ require (
 	github.com/IBM/go-sdk-core/v5 v5.5.1
 	github.com/IBM/ibm-cos-sdk-go v1.7.0
 	github.com/IBM/ibm-cos-sdk-go-config v1.2.0
-	github.com/IBM/ibm-hpcs-tke-sdk v0.0.0-20210706185921-23cc1abae511
+	github.com/IBM/ibm-hpcs-tke-sdk v0.0.0-00010101000000-000000000000
+	// github.com/IBM/ibm-hpcs-tke-sdk v0.0.0-20210706185921-23cc1abae511
 	github.com/IBM/keyprotect-go-client v0.7.0
 	github.com/IBM/networking-go-sdk v0.18.0
 	github.com/IBM/platform-services-go-sdk v0.18.16
@@ -51,7 +52,7 @@ require (
 	github.com/renier/xmlrpc v0.0.0-20170708154548-ce4a1a486c03 // indirect
 	github.com/softlayer/softlayer-go v1.0.3
 	github.ibm.com/ibmcloud/kubernetesservice-go-sdk v0.0.0-00010101000000-000000000000
-	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
+	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	golang.org/x/tools v0.1.4 // indirect
 	gotest.tools v2.2.0+incompatible
@@ -60,3 +61,5 @@ require (
 replace github.com/softlayer/softlayer-go v1.0.3 => github.com/IBM-Cloud/softlayer-go v1.0.3-tf
 
 replace github.ibm.com/ibmcloud/kubernetesservice-go-sdk => ./common/github.ibm.com/ibmcloud/kubernetesservice-go-sdk
+
+replace github.com/IBM/ibm-hpcs-tke-sdk => /Users/rossheninger/dev/gopath/src/github.com/IBM/ibm-hpcs-tke-sdk

@@ -711,13 +711,13 @@ func resourceIBMHPCSDelete(context context.Context, d *schema.ResourceData, meta
 	// Zeroize Crypto Units
 	hsm := expandHSMConfig(d, meta)
 	// Check Transitions
-	problems, err := tkesdk.CheckTransition(ci, hsm)
-	if err != nil {
-		return diag.FromErr(fmt.Errorf("[ERROR] Error Checking Transitions: %s", err))
-	}
-	if len(problems) != 0 {
-		return diag.FromErr(fmt.Errorf("[ERROR] Error Checking Transitions: %v", problems))
-	}
+	// problems, err := tkesdk.CheckTransition(ci, hsm)
+	// if err != nil {
+	// 	return diag.FromErr(fmt.Errorf("[ERROR] Error Checking Transitions: %s", err))
+	// }
+	// if len(problems) != 0 {
+	// 	return diag.FromErr(fmt.Errorf("[ERROR] Error Checking Transitions: %v", problems))
+	// }
 	err = tkesdk.Zeroize(ci, hsm)
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("[ERROR] Error Zeroizing Crypto Units: %s", err))
@@ -875,11 +875,8 @@ func hsmClient(d *schema.ResourceData, meta interface{}) (tkesdk.CommonInputs, e
 	if err != nil {
 		return ci, fmt.Errorf("[ERROR] Error Refreshing Authentication Token: %s", err)
 	}
-	ci.Region = bluemixSession.Config.Region
-	ci.ApiEndpoint = envFallBack([]string{"IBMCLOUD_HPCS_TKE_ENDPOINT"}, "cloud.ibm.com")
-	if bluemixSession.Config.Visibility == "private" || bluemixSession.Config.Visibility == "public-and-private" {
-		ci.ApiEndpoint = envFallBack([]string{"IBMCLOUD_HPCS_TKE_ENDPOINT"}, "private.cloud.ibm.com")
-	}
+	ci.Region = d.Get("location").(string)
+	ci.ApiEndpoint = envFallBack([]string{"IBMCLOUD_ENDPOINT"}, "cloud.ibm.com")
 	ci.AuthToken = bluemixSession.Config.IAMAccessToken
 
 	return ci, err
