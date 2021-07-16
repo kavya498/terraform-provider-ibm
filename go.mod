@@ -13,8 +13,7 @@ require (
 	github.com/IBM/go-sdk-core/v5 v5.5.1
 	github.com/IBM/ibm-cos-sdk-go v1.7.0
 	github.com/IBM/ibm-cos-sdk-go-config v1.2.0
-	github.com/IBM/ibm-hpcs-tke-sdk v0.0.0-00010101000000-000000000000
-	// github.com/IBM/ibm-hpcs-tke-sdk v0.0.0-20210706185921-23cc1abae511
+	github.com/IBM/ibm-hpcs-tke-sdk v0.0.0-20210716185544-e8403b3501ef
 	github.com/IBM/keyprotect-go-client v0.7.0
 	github.com/IBM/networking-go-sdk v0.18.0
 	github.com/IBM/platform-services-go-sdk v0.18.16
@@ -22,7 +21,6 @@ require (
 	github.com/IBM/schematics-go-sdk v0.0.2
 	github.com/IBM/secrets-manager-go-sdk v0.1.19
 	github.com/IBM/vpc-go-sdk v0.8.0
-	github.com/Logicalis/asn1 v0.0.0-20190312173541-d60463189a56 // indirect
 	github.com/ScaleFT/sshkeys v0.0.0-20200327173127-6142f742bca5
 	github.com/Shopify/sarama v1.27.2
 	github.com/apache/incubator-openwhisk-client-go v0.0.0-20171128215515-ad814bc98c32 // indirect
@@ -61,5 +59,3 @@ require (
 replace github.com/softlayer/softlayer-go v1.0.3 => github.com/IBM-Cloud/softlayer-go v1.0.3-tf
 
 replace github.ibm.com/ibmcloud/kubernetesservice-go-sdk => ./common/github.ibm.com/ibmcloud/kubernetesservice-go-sdk
-
-replace github.com/IBM/ibm-hpcs-tke-sdk => /Users/rossheninger/dev/gopath/src/github.com/IBM/ibm-hpcs-tke-sdk

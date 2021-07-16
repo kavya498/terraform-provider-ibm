@@ -41,6 +41,7 @@ The following arguments are supported:
   * `key` - (Required, string) The path in your local workstation where you store the administrator signature file.
   * `name` - (Required, string) The name of the administrator.
   * `token` - (Required, string, Sensitive) The administrator password to access the corresponding signature file.
+* `failover_units` - (Optional, string) The number of failover crypto units for your service instance. Valid values are 2 or 3 but it must be less than or equal to the number of operational crypto units.
 * `location` - (Required, string) The region abbreviation, such as us-south, that represents the geographic area where the operational crypto units of your service instance are located. For more information, see Regions and locations. As recovery crypto units are available only in us-south and us-east, only these two regions are supported if you want to use Terraform for instance initialization.
 * `name` - (Required, string) The name of your Hyper Protect Crypto Service instance.
 * `plan` - (Required, string) The pricing plan for your service instance. Currently, only the standard plan is supportd.

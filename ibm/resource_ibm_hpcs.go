@@ -40,7 +40,7 @@ func resourceIBMHPCS() *schema.Resource {
 
 		CustomizeDiff: customdiff.Sequence(
 			func(_ context.Context, diff *schema.ResourceDiff, v interface{}) error {
-				return immutableResourceCustomizeDiff([]string{"units", "location", "resource_group_id", "service"}, diff)
+				return immutableResourceCustomizeDiff([]string{"units", "failover_units", "location", "resource_group_id", "service"}, diff)
 			},
 			func(_ context.Context, diff *schema.ResourceDiff, v interface{}) error {
 				return resourceTagsCustomizeDiff(diff)
@@ -66,6 +66,11 @@ func resourceIBMHPCS() *schema.Resource {
 			"units": {
 				Type:        schema.TypeInt,
 				Required:    true,
+				Description: "Arbitrary parameters to pass. Must be a JSON object",
+			},
+			"failover_units": {
+				Type:        schema.TypeInt,
+				Optional:    true,
 				Description: "Arbitrary parameters to pass. Must be a JSON object",
 			},
 			"service": {
@@ -301,6 +306,7 @@ func resourceIBMHPCS() *schema.Resource {
 
 type HPCSParams struct {
 	Units            int    `json:"units,omitempty"`
+	FailoverUnits    int    `json:"failover_units,omitempty"`
 	ServiceEndpoints string `json:"service-endpoints,omitempty"`
 }
 
@@ -395,6 +401,9 @@ func resourceIBMHPCSCreate(context context.Context, d *schema.ResourceData, meta
 	if units, ok := d.GetOk("units"); ok {
 		params.Units = units.(int)
 	}
+	if failover_units, ok := d.GetOk("failover_units"); ok {
+		params.FailoverUnits = failover_units.(int)
+	}
 	if serviceEndpoint, ok := d.GetOk("service_endpoints"); ok {
 		params.ServiceEndpoints = serviceEndpoint.(string)
 	}
@@ -463,6 +472,7 @@ func resourceIBMHPCSRead(context context.Context, d *schema.ResourceData, meta i
 	d.Set("resource_bindings_url", instance.ResourceBindingsURL)
 	d.Set("resource_aliases_url", instance.ResourceAliasesURL)
 	d.Set("state", instance.State)
+	d.Set("service", strings.Split(instanceID, ":")[4])
 	//Set tags
 	tags, err := GetTagsUsingCRN(meta, *instance.CRN)
 	if err != nil {
@@ -496,6 +506,9 @@ func resourceIBMHPCSRead(context context.Context, d *schema.ResourceData, meta i
 		}
 		if units, ok := instance.Parameters["units"]; ok {
 			d.Set("units", units)
+		}
+		if failover_units, ok := instance.Parameters["failover_units"]; ok {
+			d.Set("failover_units", failover_units)
 		}
 	}
 	// Set Extensions
