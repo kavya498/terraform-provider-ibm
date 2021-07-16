@@ -723,14 +723,6 @@ func resourceIBMHPCSDelete(context context.Context, d *schema.ResourceData, meta
 	}
 	// Zeroize Crypto Units
 	hsm := expandHSMConfig(d, meta)
-	// Check Transitions
-	// problems, err := tkesdk.CheckTransition(ci, hsm)
-	// if err != nil {
-	// 	return diag.FromErr(fmt.Errorf("[ERROR] Error Checking Transitions: %s", err))
-	// }
-	// if len(problems) != 0 {
-	// 	return diag.FromErr(fmt.Errorf("[ERROR] Error Checking Transitions: %v", problems))
-	// }
 	err = tkesdk.Zeroize(ci, hsm)
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("[ERROR] Error Zeroizing Crypto Units: %s", err))
