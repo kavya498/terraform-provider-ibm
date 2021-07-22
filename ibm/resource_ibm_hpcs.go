@@ -86,11 +86,11 @@ func resourceIBMHPCS() *schema.Resource {
 				Computed:    true,
 			},
 			"service_endpoints": {
-				Description:  "Types of the service endpoints. Possible values are 'public', 'private', 'public-and-private'.",
+				Description:  "Types of the service endpoints. Possible values are `public-and-private`, `private-only`.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,
-				ValidateFunc: validateAllowedStringValue([]string{"public", "private", "public-and-private"}),
+				ValidateFunc: validateAllowedStringValue([]string{"public-and-private", "private-only"}),
 			},
 			"tags": {
 				Type:     schema.TypeSet,
@@ -307,7 +307,7 @@ func resourceIBMHPCS() *schema.Resource {
 type HPCSParams struct {
 	Units            int    `json:"units,omitempty"`
 	FailoverUnits    int    `json:"failover_units,omitempty"`
-	ServiceEndpoints string `json:"service-endpoints,omitempty"`
+	ServiceEndpoints string `json:"allowed_network,omitempty"`
 }
 
 func resourceIBMHPCSValidator() *ResourceValidator {
