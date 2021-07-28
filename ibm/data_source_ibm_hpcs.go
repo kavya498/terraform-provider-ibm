@@ -6,6 +6,7 @@ package ibm
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/IBM/ibm-hpcs-tke-sdk/tkesdk"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -56,7 +57,11 @@ func dataSourceIBMHPCS() *schema.Resource {
 				Computed:    true,
 				Description: "The number of failover crypto units for your service instance",
 			},
-
+			"service_endpoints": {
+				Description: "Types of the service endpoints. Possible values are `public-and-private`, `private-only`.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"plan": {
 				Description: "The plan type of the instance",
 				Type:        schema.TypeString,
@@ -237,6 +242,14 @@ func dataSourceIBMHPCSRead(context context.Context, d *schema.ResourceData, meta
 		d.Set("extensions", Flatten(instance.Extensions))
 	}
 	if instance.Parameters != nil {
+		if endpoint, ok := instance.Parameters["allowed_network"]; ok {
+			v := reflect.ValueOf(endpoint)
+			if v.Kind() == reflect.String {
+				d.Set("service_endpoints", endpoint.(string))
+			} else {
+				d.Set("service_endpoints", "public-and-private")
+			}
+		}
 		if units, ok := instance.Parameters["units"]; ok {
 			d.Set("units", convertInterfaceToInt(units))
 		}

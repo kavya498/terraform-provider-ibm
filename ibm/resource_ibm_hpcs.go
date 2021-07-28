@@ -504,7 +504,12 @@ func resourceIBMHPCSRead(context context.Context, d *schema.ResourceData, meta i
 	// Set Instance parameters
 	if instance.Parameters != nil {
 		if endpoint, ok := instance.Parameters["allowed_network"]; ok {
-			d.Set("service_endpoints", endpoint)
+			v := reflect.ValueOf(endpoint)
+			if v.Kind() == reflect.String {
+				d.Set("service_endpoints", endpoint.(string))
+			} else {
+				d.Set("service_endpoints", "public-and-private")
+			}
 		}
 		if units, ok := instance.Parameters["units"]; ok {
 			d.Set("units", convertInterfaceToInt(units))
