@@ -4,8 +4,6 @@
 package provider
 
 import (
-	"log"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -62,8 +60,11 @@ func flattenSchemaElements(v *schema.Schema) interface{} {
 		result := flattenTypeSet(v)
 		return result
 	case schema.TypeList:
-		log.Println("**********[ENTER]*********", v)
 		result := flattenTypeSet(v)
+		return result
+	case schema.TypeMap:
+		result := make(map[string]interface{})
+		result["dryrun_key"] = "dryrun"
 		return result
 	}
 	return "dryrun"
@@ -76,30 +77,18 @@ func flattenTypeSet(v *schema.Schema) interface{} {
 				return []string{"dryrun"}
 			}
 			if e.Type == schema.TypeInt {
-				return []int{0}
+				return []int{1}
 			}
 		}
 
 		if es, ok := v.Elem.(*schema.Resource); ok {
-			log.Printf("***********[1]************ %+v", es)
 			elemSchemas := make([]map[string]interface{}, 0)
 			elemSchema := make(map[string]interface{})
 			for k, value := range es.Schema {
-				log.Printf("***********[2222]************%s %+v", k, value)
 				flattenedValue := flattenSchemaElements(value)
-				log.Printf("***********[flattenedValue]************%s %+v", k, flattenedValue)
-				if k == "group_id" {
-					log.Println("***********[GROUPPPs]************", flattenedValue)
-				}
-				if k == "rules" {
-					log.Println("***********[ROLESS]************", flattenedValue)
-				}
 				elemSchema[k] = flattenedValue
-				elemSchemas = append(elemSchemas, elemSchema)
-				log.Println("***********[elemROLESS]************", elemSchemas)
-				return elemSchemas
-
 			}
+			elemSchemas = append(elemSchemas, elemSchema)
 			return elemSchemas
 		}
 	}
