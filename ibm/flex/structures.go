@@ -45,6 +45,7 @@ import (
 	"github.com/IBM-Cloud/bluemix-go/api/usermanagement/usermanagementv2"
 	"github.com/IBM/platform-services-go-sdk/iamaccessgroupsv2"
 	"github.com/IBM/platform-services-go-sdk/iamidentityv1"
+	rc "github.com/IBM/platform-services-go-sdk/resourcecontrollerv2"
 )
 
 const (
@@ -1938,6 +1939,16 @@ func EscapeUrlParm(urlParm string) string {
 func GetLocation(instance models.ServiceInstanceV2) string {
 	region := instance.Crn.Region
 	cName := instance.Crn.CName
+	if cName == "bluemix" || cName == "staging" {
+		return region
+	} else {
+		return cName + "-" + region
+	}
+}
+func GetLocationV2(instance rc.ResourceInstance) string {
+	crnSplit := strings.Split(*instance.CRN, ":")
+	region := crnSplit[5]
+	cName := crnSplit[2]
 	if cName == "bluemix" || cName == "staging" {
 		return region
 	} else {
